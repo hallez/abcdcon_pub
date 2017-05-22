@@ -1,0 +1,20 @@
+---
+directories:
+    raw_mri: raw_mri
+    analyzed_mri: analyzed_mri
+    raw_behavioral: raw_behavioral
+    analyzed_behavioral: analyzed_behavioral
+    behavioral_analysis_scripts: scripts/behavioral_analyses
+    run_experiment_scripts: scripts/run_task
+    mri_analysis_scripts: scripts/mri_analyses
+    google_drive: /path/to/google_drive/data/folder
+    dropbox: /path/to/dropbox/project/data/folder
+    dropbox_abcdcon: /path/to/dropbox/project/folder
+    tracings: /path/to/tracings
+    vendor: vendor
+    stimuli:
+        practice: stimuli/PracticeStim
+        object_in_scene: stimuli/ObjectStillsInScene
+        object_alone: stimuli/ObjectStimuliAlone
+        house_video: stimuli/Movies_Mp4Versions
+        house_still: stimuli/HouseStills
