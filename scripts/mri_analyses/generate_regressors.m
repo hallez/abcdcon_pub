@@ -6,22 +6,6 @@
 %
 %M. Ritchey, Nov 2011
 %
-%Updated Jan 2012 by MR
-%   - includes smart handling of cases in which not all trial types exist
-%   for every run
-%   - generates contrast vectors for each trial type and outputs to file
-%Updated April 2012 by MR
-%   - includes the option to specify a regressor file for padding contrast
-%   vectors
-%   - includes the option to weight contrasts by the proportional number of
-%   trials per run, rather than weighting runs equally
-%Updated June 2012 by MR
-%   - includes the option to have duration set to zero or a behavioral
-%   variable
-%   - writes out a .mat file to the model directory with all of the model
-%   specification values: model_info.mat
-%   - includes sections for specifying run exceptions (e.g., which runs to
-%   include, run naming)
 %Updated August 2014 by HDZ
 
 initialize_ABCDCon
@@ -36,36 +20,7 @@ allModels(1).contrastNames = {'all' 'allRHits' 'allRHitsxCR' 'allRHitsxFA' 'allR
     'allBrown' 'brownRHits' 'brownRHitsxCR' 'brownRHitsxFA' 'brownRHitsxFHits_Miss'...
     'allGray' 'grayRHits' 'grayRHitsxCR' 'grayRHitsxFA' 'grayRHitsxFHits_Miss'};
 
-allModels(2).name = 'objrecANDlocrec_model'; 
-
-allModels(3).name = 'byRoombyHouse_model';
-allModels(3).type = 'univariate';
-allModels(3).contrasts = {[1] [2] [3] [4]...
-    [5] [6] [7] [8]...
-    [9]};
-allModels(3).contrastNames = {'Brown_Rm1_RHit' 'Brown_Rm2_RHit' 'Gray_Rm1_RHit' 'Gray_Rm2_RHit' ...
-    'Brown_Rm1_FHitsANDMisses' 'Brown_Rm2_FHitsANDMisses' 'Gray_Rm1_FHitsANDMisses' 'Gray_Rm2_FHitsANDMisses' ...
-    'CR'};
-
-% NB: this model is essentially redundant w/ 'stillsVSvideoBYhouse_model'
-% except that the houses do not get their own regressors in this model (so
-% we might think this model is doing a slightly worse job of capturing the
-% data...?)
-allModels(4).name = 'stillsVSvideo_model'; 
-allModels(4).type = 'roomLocalizer';
-allModels(4).contrasts = {[1] [2] [1 2] [1;2]};
-allModels(4).contrastNames = {'StillsxBaseline', 'VideosxBaseline', 'StillsANDVideosxBaseline','StillxVideo'};
-
-allModels(5).name = 'stillsVSvideoBYhouse_model';
-allModels(5).type = 'roomLocalizer';
-allModels(5).contrasts = {[1 2] [3 4] [1 2 3 4] [1 2; 3 4] [1;2] [3; 4] [1 3; 2 4]};
-allModels(5).contrastNames = {'StillsxBaseline', 'VideosxBaseline', 'StillsANDVideosxBaseline', 'StillxVideo', 'BrownStillxGrayStill', 'BrownVideoxGrayVideo', 'BrownStillorVideoxGrayStillorVideo'};
-
-allModels(6).name = 'stillsBYhouseNOVideoRegressors_model';
-allModels(6).type = 'roomLocalizer';
-allModels(6).contrasts = {[1 2] [1;2]};
-allModels(6).contrastNames = {'StillsxBaseline', 'BrownStillxGrayStill'};
-
+% enable selecting to analyze different models
 modelSelect = 0;
 for imodel=1:size(allModels,2)
     curModel = allModels(imodel).name;
@@ -90,7 +45,7 @@ end %if isdir(
 conLabel = '_cons';
 write_reg = 1; %do you want to write out regressor mats?
 write_con = 1; %do you want to write out contrasts?
-include_dur = 1; %do you want to include durations? typically this is NO, but for roomLocalizer models we DO want to
+include_dur = 0; %do you want to include durations? typically this is no
 
 %include motion regressors in the model? 1 for standard 6-param motion regs, 2 for motion+spikes
 inc_motion = 2; 
@@ -114,28 +69,11 @@ for isub = 1:length(subjects)
         mkdir(strcat(outputDir,b.curSubj));
     end
     
-    if strcmp(curModelType, 'roomLocalizer')
-        onsets_fname = 'room_localizer_onsets_file.csv';
-    else
-        onsets_fname = 'onsets_file.csv';
-    end
+    onsets_fname = 'onsets_file.csv';
     
     datafile = [rawBehavDir,b.curSubj,filesep,onsets_fname]; 
     
     conditions = tdfread(datafile,','); 
-    % eliminate any rows where the model has a value of NaN
-    % this is specific to `stillsBYhouseNOVideoRegressors_model` where
-    % don't want to include video trials (which have been coded in R as
-    % `NaN` in any of the regressors)
-    % based on: http://www.mathworks.com/matlabcentral/newsreader/view_thread/236371
-    % and also http://stackoverflow.com/questions/23932062/deleting-multiple-rows-from-all-fields-of-a-given-structure-array-using-matlab
-    if strcmp(curModel,'stillsBYhouseNOVideoRegressors_model')
-        non_na_rows = find(~isnan(conditions.stillsBYhouseNOVideoRegressors_model));
-        % structfun(function, performed on structure, parameter (in this case, return
-        % a structure w/ same field types as original), logical setting of
-        % parameter)
-        conditions = structfun(@(v) v(non_na_rows), conditions, 'Uniform', 0);
-    end
 
     if ~isfield(conditions,curModel) 
         error('There is no column for the current model (%s) in onsets file (%s).\n',curModel,datafile);
@@ -155,12 +93,6 @@ for isub = 1:length(subjects)
     
     b = run_exceptions_ABCDCon(b);
     
-    % set up things that are specific to the room_localizer run
-    if strcmp(curModelType, 'roomLocalizer')
-        b.runs = {'room_localizer'};
-        numRecogTrials = 50; % 42 stills and 8 videos
-    end
-    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %contrast manager will store which trial types are in which column
@@ -171,17 +103,9 @@ for isub = 1:length(subjects)
     for iRun = 1:length(b.runs)
         
         cur_run = b.runs{iRun};
-        
-        if strcmp(curModelType, 'roomLocalizer')
-            % since there is just one run, set up a column of 1s (ie, pull
-            % all trials in this run). make sure this is a logical index so
-            % that when use to pull out `regs` later it's getting values
-            % in those rows
-            curRunIdx = true(size(regs,1),1);
-        else
-            cur_run_num = str2double(strtok(cur_run, 'run'));        
-            curRunIdx = conditions.BlockID==cur_run_num;
-        end
+
+        cur_run_num = str2double(strtok(cur_run, 'run'));        
+        curRunIdx = conditions.BlockID==cur_run_num;
         
         curfuncrun = [analMRIDir,b.curSubj,filesep,cur_run,filesep];
         filename = [outputDir,b.curSubj,filesep,curModel,'_',b.curSubj,'_',cur_run,'_regs'];
@@ -213,13 +137,8 @@ for isub = 1:length(subjects)
                 onsets = [onsets conditions.Onset(rowids)']; 
                 durations = [durations add_dur]; %append current value for durations onto prior value (b/c cellstr will put into next column)
                
-                % append run number to regressor if running
-                % byRoombyHouse_model, otherwise don't worry about that
-                if(strcmp(curModel,'byRoombyHouse_model')==1)
-                    names = [names strcat('run', cur_run_num, '_', regnames(regids==curRegsIDs(iReg)))];
-                else
-                    names = [names regnames(regids==curRegsIDs(iReg))]; %append name of current regressor (NB since embedded earlier in if rowids only adds when regressor exists for current run)
-                end
+
+                names = [names regnames(regids==curRegsIDs(iReg))]; %append name of current regressor (NB since embedded earlier in if rowids only adds when regressor exists for current run)
                 
                 contrast_man = [contrast_man regids(regids==curRegsIDs(iReg))];
                 contrast_trinum = [contrast_trinum length(onsets)]; %number of trials for current regressor
