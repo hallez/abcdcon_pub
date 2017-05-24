@@ -48,7 +48,8 @@ Variables that are common across Matlab scripts will be set by `scripts/mri_anal
   3. `ABCDCon_objectRecog_MRI.m`
   4. `ABCDCon_locationRecog.m`
 
-## Behavioral data analysis (**need to upload these scripts**)
+## Behavioral data analysis 
+These scripts can be found in `abcdcon_RScripts`. They are setup as an R package (http://r-pkgs.had.co.nz/) for ease of loading required packages and functions, but this is probably a non-standard use of an R package.
 1. `load_ABCDCon.R`
 2. `analyze_ABCDCon.R`
 
