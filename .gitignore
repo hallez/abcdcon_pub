@@ -1,0 +1,16 @@
+config.yml
+analyzed_behavioral/*
+analyzed_mri/*
+raw_behavioral/*
+raw_mri/*
+stimuli/*
+tracings/*
+Rplots.pdf
+*.Rdata
+*~
+*.Rhistory
+.Rproj.user
+*.html
+*.example
+.DS_Store
+.idea/*
