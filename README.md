@@ -38,6 +38,9 @@ pip install -r requirements.txt
   * tidyr (>= 0.2.0)
   * yaml (>= 2.1.13)
 
+## Outside functions and packages
+* Code from other sources has been included in the `vendor` directory. This is not code that I wrote and therefore is subject to the usage license and instructions of those authors. It is included here out of convenience for those trying to run the scripts in the current repository. 
+
 # Scripts
 Variables that are common across Matlab scripts will be set by `scripts/mri_analyses/initialize_ABCDCon.m` (This will need to be added to your Matlab path).
 ## Data collection
