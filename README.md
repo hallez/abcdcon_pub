@@ -72,6 +72,8 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
   * **Need to upload `snaplabels_forMatlab.txt`, `hc_transitions.yml.example`**
 4. Reslice the ROIs into EPI space (if using ASHS, these will be in T2 space) using `RSA_reslice_t2_and_ROIs_batch.m`
 5. Binarize the ROIs so they can be used as masks using `RSA_binarize_ROIs_batch.m`
+6. Generate trial labels
+  * This is a convoluted system that should be re-implemented differently if these analysis scripts were re-generated from scratch. However, what I did was first extract trial IDs from the single trial betas using `RSA_trial_ids_from_betas.m` and then use `decode_single_trial_labels.R` to mark trials that needed to be excluded (e.g., outlier betas).
 6. Extract beta values for trials of interest using `RSA_btwn_runs_exclude_outlier_trials.m`
 8. Calculate the pattern similarity values of interest using `pattern_similarity_no_outlier_trials_load_data_btwn_runs.R`
 9. Analyze using mixed models with `mixed_models.R`
