@@ -39,7 +39,7 @@ pip install -r requirements.txt
   * yaml (>= 2.1.13)
 
 ## Outside functions and packages
-* Code from other sources has been included in the `vendor` directory. This is not code that I wrote and therefore is subject to the usage license and instructions of those authors. It is included here out of convenience for those trying to run the scripts in the current repository. 
+* Code from other sources has been included in the `vendor` directory. This is not code that I wrote and therefore is subject to the usage license and instructions of those authors. It is included here out of convenience for those trying to run the scripts in the current repository.
 
 # Scripts
 Variables that are common across Matlab scripts will be set by `scripts/mri_analyses/initialize_ABCDCon.m` (This will need to be added to your Matlab path).
@@ -80,3 +80,6 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
 6. Extract beta values for trials of interest using `RSA_btwn_runs_exclude_outlier_trials.m`
 8. Calculate the pattern similarity values of interest using `pattern_similarity_no_outlier_trials_load_data_btwn_runs.R`
 9. Analyze using mixed models with `mixed_models.R`
+
+## Control analyses 
+1. Randomly select trials so that all conditions have equal bin sizes: `control_analysis_matched_trial_numbers.R`
