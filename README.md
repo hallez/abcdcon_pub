@@ -65,7 +65,7 @@ Assumes have already run `load_ABCDCon.R`, downloaded .zip MRI files, converted 
 ## MRI: Multivariate analyses (**need to add scripts to repo**)
 Assumes you have already preprocessed, run QA (to generate spike regressors), and have traced ROIs.
 1. Generate single-trial regressors using `RSA_generate_single_trial_regressors.m`
-2. Estimate the single trial betas using `single_trial_models_batch.m`
+2. Estimate the single trial betas using `RSA_single_trial_models_batch.m`
 3. Identify outlier beta timepoints using `RSA_beta_timeseries_graphs.m` to visually identify the group threshold and then `RSA_beta_timeseries_id_outliers.m` to mark excluded betas on a subject-by-subject basis
 3. Gather the ROIs of interest ensuring that have them split so can look at body separate from head and tail.
 4. Reslice the ROIs into EPI space (if using ASHS, these will be in T2 space) using `RSA_reslice_t2_and_ROIs_batch.m`
