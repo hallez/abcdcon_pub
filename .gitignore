@@ -11,7 +11,6 @@ Rplots.pdf
 *.Rhistory
 .Rproj.user
 *.html
-*.example
 .DS_Store
 .idea/*
 abcdcon_Rscripts/.Rbuildignore
