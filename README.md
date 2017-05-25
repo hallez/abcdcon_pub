@@ -29,8 +29,7 @@ pip install -r requirements.txt
 * Required pacakges:
   * dplyr (>= 0.4.0)
   * ggplot2 (>= 1.0.1)
-  * halle (>=0.5.6)
-    * can be downloaded: https://github.com/hallez/halle
+  * [halle (>=0.5.6)](https://github.com/hallez/halle)
   * lme4(>= 1.1-11)
   * R.matlab (>= 3.2.0)
   * reshape2(>= 1.4.1)
@@ -52,12 +51,12 @@ Variables that are common across Matlab scripts will be set by `scripts/mri_anal
   4. `ABCDCon_locationRecog.m`
 
 ## Behavioral data analysis
-These scripts can be found in `abcdcon_RScripts`. They are setup as an R package (http://r-pkgs.had.co.nz/) for ease of loading required packages and functions, but this is probably a non-standard use of an R package. You should open `abcdcon.Rproj` and then run scripts from here (this should set the current working directory correctly without using `setwd()`).
+These scripts can be found in `abcdcon_RScripts`. They are setup as an [R package](http://r-pkgs.had.co.nz/) for ease of loading required packages and functions, but this is probably a non-standard use of an R package. You should open `abcdcon.Rproj` and then run scripts from here (this should set the current working directory correctly without using `setwd()`).
 1. `load_ABCDCon.R`
 2. `analyze_ABCDCon.R`
 
 ## MRI: Univariate analyses
-Assumes have already run `load_ABCDCon.R`, downloaded .zip MRI files, converted dicom images, set subject-specific folder names, commonized folder names (e.g., `run1` instead of whatever the MRI scanner outputs), and run data quality assurance (see https://github.com/ritcheym/DML_QA). Scripts assume they are being run relative to `scripts/mri_analyses`.
+Assumes have already run `load_ABCDCon.R`, downloaded .zip MRI files, converted dicom images, set subject-specific folder names, commonized folder names (e.g., `run1` instead of whatever the MRI scanner outputs), and run [data quality assurance](https://github.com/ritcheym/DML_QA). Scripts assume they are being run relative to `scripts/mri_analyses`.
 1. Preprocess the data using `preprocess.m`
 2. Generate regressors for the first-level analyses using `generate_regressors.m`
 3. Run first-level analyses using `first_level.m`
