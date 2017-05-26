@@ -4,7 +4,7 @@ ABCDCon
 # Repository details
 This repository contains the code used to collect data and generate analyses for the following paper:
 
-**CITATION HERE**
+[Dimsdale-Zucker, H. R., Ritchey, M., Ekstrom, A. D., Yonelinas, A. P., Ranganath, C. (2017). CA1 and CA3 differentially support spontaneous retrieval of episodic contexts within human hippocampal subfields. bioRxiv. doi: https://doi.org/10.1101/142349](http://www.biorxiv.org/content/early/2017/05/25/142349)
 
 The scripts contained here were used to collect and analyze data using Matlab r2014b and R version 3.3.2 run in RStudio and have not been tested for compatibility with later versions or across operating systems. They are provided for the purposes of openness and transparency of the data generation and analysis process.
 
