@@ -25,7 +25,7 @@ library(dplyr)
 
 #' # Setup
 #' ## Load config file
-project_dir <- ("../")
+project_dir <- ("/Users/hrzucker/workspace/abcdcon_code/") #("../")
 config <- yaml::yaml.load_file(paste0(project_dir, "config.yml"))
 
 #' ## Set paths as variables
@@ -234,7 +234,7 @@ unique(all_trials_body_temporal$hemi)
 unique(all_trials_body_temporal$roi)
 
 #' ### Model setup
-# Now, we need to follow up the significant 3-way interaction
+# Now, we need to follow up the significant 3-way interaction in left hemi
 temporal_lmm_left <-
   all_trials_body_temporal %>%
   dplyr::filter(hemi == "left")
@@ -306,3 +306,77 @@ if(SAVE_GRAPHS_FLAG == 1){
                                 "sameAll_sameSome_diffAll_left_body_CA1_CA23DG.pdf"),
                   width=8, height=6)
 }
+
+#' ### Run same analyses in right hemi
+temporal_lmm_right <-
+all_trials_body_temporal %>%
+  dplyr::filter(hemi == "right")
+
+# print out what's in the dataframe so we're supersure before running stats
+head(temporal_lmm_right)
+unique(temporal_lmm_right$condition)
+unique(temporal_lmm_right$roi)
+unique(temporal_lmm_right$hemi)
+
+# condition, roi
+lmm.ss2.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = temporal_lmm_right, REML = FALSE)
+summary(lmm.ss2.right)
+
+# condition * roi
+lmm.ss3.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = temporal_lmm_right, REML=FALSE)
+summary(lmm.ss3.right)
+
+#' #### Compare models (left CA1 x left CA23DG: Episodic Context Similarity)
+# roi and condition vs. roi*condition
+# this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
+anova(lmm.ss2.right, lmm.ss3.right)
+
+# #' # Plot (Supplemental)
+all_trials_body %>%
+  dplyr::filter(condition != "anyVideo_sameHouse") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::mutate(roi_by_hemi = gsub("(.*?)_body", "right \\1", roi)) %>%
+  dplyr::mutate(roi_trimmed = sub("_(3)_", "\\1", roi_by_hemi)) %>%
+  dplyr::group_by(roi_trimmed, hemi, condition) %>%
+  dplyr::summarise(mean = mean(r),
+                   sd = sd(r),
+                   n = length(r),
+                   sem = sd(r)/sqrt(length(r))) %>%
+  # re-order conditions
+  dplyr::mutate(condition_ordered = factor(condition, levels = c("sameVideo_sameHouse", "diffVideo_sameHouse", "diffVideo_diffHouse"))) %>%
+  # put one space between same/diff and video/house and TWO spaces between where we'll want a line break
+  # this will help `gsub` only create 2 lines for each condition name rather than 4 lines
+  dplyr::mutate(condition_renamed = car::recode(condition_ordered, "'diffVideo_sameHouse' = 'Different Video  Same House'; 'diffVideo_diffHouse' = 'Different Video  Different House' ; 'sameVideo_sameHouse' = 'Same Video  Same House'")) %>%
+  dplyr::mutate(condition_renamed_ordered = factor(condition_renamed, levels = c("Same Video  Same House", "Different Video  Same House", "Different Video  Different House"))) %>%
+  # based on https://www.r-bloggers.com/line-breaks-between-words-in-axis-labels-in-ggplot-in-r/
+  dplyr::mutate(condition_breaks = gsub("  ", "\n", condition_renamed_ordered)) %>%
+  ggplot2::ggplot(ggplot2::aes(x = condition_breaks, y = mean, fill = condition_breaks)) +
+  ggplot2::geom_bar(stat = "identity") +
+  ggplot2::facet_grid(. ~ roi_trimmed) +
+  # to match colors from method figure:
+  # "#CC6633" = orange (diff video, diff house)
+  # "#CC6699" = fuscia (same video, same house)
+  # "#66CC33" = green (different video, same house)
+  ggplot2::scale_fill_manual(values = c("#CC6633", "#66CC33", "#CC6699")) +
+  ggplot2::geom_errorbar(ggplot2::aes(ymax = mean + sem,
+                                      ymin = mean - sem,
+                                      width=0.10)) +
+  ggplot2::ggtitle("Neural pattern similarity for spatial and episodic contexts") +
+  ggplot2::ylab("Mean Pattern Similarity (r)") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, color = "black"), axis.title.x = ggplot2::element_blank(),
+                 strip.text.x = ggplot2::element_text(size = 20),
+                 axis.text.y = ggplot2::element_text(size = 10), axis.title.y = ggplot2::element_text(size = 20),
+                 strip.text.y = ggplot2::element_text(size = 20),
+                 legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_blank(),
+                 plot.title = ggplot2::element_blank(),
+                 strip.background = ggplot2::element_blank()) +
+  ggplot2::theme(legend.position = "none")
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(dropbox_dir,
+                                halle::ensure_trailing_slash("writeups"),
+                                halle::ensure_trailing_slash("figures"),
+                                "sameAll_sameSome_diffAll_right_body_CA1_CA23DG.pdf"),
+                  width=8, height=6)
+}
+
