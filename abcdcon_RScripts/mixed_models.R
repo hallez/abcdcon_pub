@@ -25,7 +25,7 @@ library(dplyr)
 
 #' # Setup
 #' ## Load config file
-project_dir <- ("/Users/hrzucker/workspace/abcdcon_code/") #("../")
+project_dir <- ("../")
 config <- yaml::yaml.load_file(paste0(project_dir, "config.yml"))
 
 #' ## Set paths as variables
@@ -96,8 +96,8 @@ head(all_trials_body)
 #' ## Save out datframe so can be used in other analyses
 save(all_trials_z_better_names,file=paste0(analyzed_mri_dir, 'group_z_renamed_spatial_temporal_PS_by_trial.RData'))
 
-#' ## Spatial and temporal conditions: sameVideo/sameHouse, diffVideo/sameHouse, diffVideo/diffHouse
-#' ### Model setup
+#' # Spatial and temporal conditions: sameVideo/sameHouse, diffVideo/sameHouse, diffVideo/diffHouse
+#' ## Model setup
 # even though this information is listed earlier when the variable is created,
 # it's nice to remind ourselves what the dataframe looks like
 # before we start doing stats on it
@@ -105,7 +105,7 @@ save(all_trials_z_better_names,file=paste0(analyzed_mri_dir, 'group_z_renamed_sp
 # remember, the `anyVideo_sameHouse` condition considers both `sameVideo_sameHouse` trials AND `diffVideo_sameHouse` trials
 # but we've decided to define space as `diffVideo/sameHouse` vs `diffVideo/diffHouse`
 
-#' ### filter so just have conditions of interest
+#' ## filter so just have conditions of interest
 all_trials_body_SVSH_DVSH_DVDH <- NULL
 all_trials_body_SVSH_DVSH_DVDH <-
   all_trials_body %>%
@@ -115,18 +115,18 @@ unique(all_trials_body_SVSH_DVSH_DVDH$condition)
 unique(all_trials_body_SVSH_DVSH_DVDH$hemi)
 unique(all_trials_body_SVSH_DVSH_DVDH$roi)
 
-#' #### main effects w/o random slopes
+#' ### main effects w/o random slopes
 lmm.all_cond_roi_hemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH, REML = FALSE)
 summary(lmm.all_cond_roi_hemi.no_random_slopes)
 
-#' #### 3-way interaction w/o random slopes
+#' ### 3-way interaction w/o random slopes
 lmm.all_condXroiXhemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi*hemi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH, REML = FALSE)
 summary(lmm.all_condXroiXhemi.no_random_slopes)
 
-### Model comparisons (ROI x Context Similarity x Hemisphere)
+#' #### Model comparisons (ROI x Context Similarity x Hemisphere)
 anova(lmm.all_cond_roi_hemi.no_random_slopes, lmm.all_condXroiXhemi.no_random_slopes)
 
-#' ### left hemi only
+#' # Left hemi only
 all_trials_body_SVSH_DVSH_DVDH_left <-
   all_trials_body_SVSH_DVSH_DVDH %>%
   dplyr::filter(hemi == "left")
@@ -137,24 +137,10 @@ summary(lmm.all_cond_roi.left)
 lmm.all_condXroi.left <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_left, REML=FALSE)
 summary(lmm.all_condXroi.left)
 
-#' #### model comparisons (Left Hemi: ROI x Context Similarity)
+#' ## model comparisons (Left Hemi: ROI x Context Similarity)
 anova(lmm.all_cond_roi.left, lmm.all_condXroi.left)
 
-#' ### right hemi only
-all_trials_body_SVSH_DVSH_DVDH_right <-
-  all_trials_body_SVSH_DVSH_DVDH %>%
-  dplyr::filter(hemi == "right")
-
-lmm.all_cond_roi.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_right, REML = FALSE)
-summary(lmm.all_cond_roi.right)
-
-lmm.all_condXroi.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_right, REML=FALSE)
-summary(lmm.all_condXroi.right)
-
-#' #### model comparisons (Right Hemi: ROI x Context Similarity)
-anova(lmm.all_cond_roi.right, lmm.all_condXroi.right)
-
-#' ### CA1, left, spatial
+#' ## CA1, left, spatial
 all_trials_body_DVSH_DVDH_CA1_left <-
   all_trials_body_SVSH_DVSH_DVDH %>%
   dplyr::filter(roi == "CA1_body") %>%
@@ -167,10 +153,10 @@ summary(lmm.null.CA1.left.spatial)
 lmm.DVSH_DVDH.no_random_slopes.CA1.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_DVSH_DVDH_CA1_left, REML = FALSE)
 summary(lmm.DVSH_DVDH.no_random_slopes.CA1.left)
 
-#' #### model comparison (Left CA1: Spatial Context Similarity)
+#' ### model comparison (Left CA1: Spatial Context Similarity)
 anova(lmm.null.CA1.left.spatial, lmm.DVSH_DVDH.no_random_slopes.CA1.left)
 
-#' ### CA1, left, temporal
+#' ## CA1, left, temporal
 all_trials_body_SVSH_DVSH_CA1_left <-
   all_trials_body_SVSH_DVSH_DVDH %>%
   dplyr::filter(roi == "CA1_body") %>%
@@ -183,10 +169,10 @@ summary(lmm.null.CA1.left.temporal)
 lmm.SVSH_DVSH.no_random_slopes.CA1.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_SVSH_DVSH_CA1_left, REML = FALSE)
 summary(lmm.SVSH_DVSH.no_random_slopes.CA1.left)
 
-#' #### model comparison (Left CA1: Episodic Context Similarity)
+#' ### model comparison (Left CA1: Episodic Context Similarity)
 anova(lmm.null.CA1.left.temporal, lmm.SVSH_DVSH.no_random_slopes.CA1.left)
 
-#' ### CA23DG, left, spatial
+#' ## CA23DG, left, spatial
 all_trials_body_DVSH_DVDH_CA23DG_left <-
   all_trials_body_SVSH_DVSH_DVDH %>%
   dplyr::filter(roi == "CA2_3_DG_body") %>%
@@ -199,10 +185,10 @@ summary(lmm.null.CA23DG.left.spatial)
 lmm.DVSH_DVDH.no_random_slopes.CA23DG.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_DVSH_DVDH_CA23DG_left, REML = FALSE)
 summary(lmm.DVSH_DVDH.no_random_slopes.CA23DG.left)
 
-#' #### model comparison (Left CA23DG: Spatial Context Similarity)
+#' ### model comparison (Left CA23DG: Spatial Context Similarity)
 anova(lmm.null.CA23DG.left.spatial, lmm.DVSH_DVDH.no_random_slopes.CA23DG.left)
 
-#' ### CA23DG, left, temporal
+#' ## CA23DG, left, temporal
 all_trials_body_SVSH_DVSH_CA23DG_left <-
   all_trials_body_SVSH_DVSH_DVDH %>%
   dplyr::filter(roi == "CA2_3_DG_body") %>%
@@ -215,13 +201,89 @@ summary(lmm.null.CA23DG.left.temporal)
 lmm.SVSH_DVSH.no_random_slopes.CA23DG.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_SVSH_DVSH_CA23DG_left, REML = FALSE)
 summary(lmm.SVSH_DVSH.no_random_slopes.CA23DG.left)
 
-#' #### model comparison (Left CA23DG: Episodic Context Similarity)
+#' ### model comparison (Left CA23DG: Episodic Context Similarity)
 anova(lmm.null.CA23DG.left.temporal, lmm.SVSH_DVSH.no_random_slopes.CA23DG.left)
 
-#' ## Temporal models: Using `all_trials_body` dataframe
-# This uses the same temporal conditions as are in the 3-way comparison
+#' # Right hemi only
+all_trials_body_SVSH_DVSH_DVDH_right <-
+  all_trials_body_SVSH_DVSH_DVDH %>%
+  dplyr::filter(hemi == "right")
 
-#' ### Print out what's in dataframe before start running stats
+lmm.all_cond_roi.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_right, REML = FALSE)
+summary(lmm.all_cond_roi.right)
+
+lmm.all_condXroi.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_right, REML=FALSE)
+summary(lmm.all_condXroi.right)
+
+#' ## model comparisons (Right Hemi: ROI x Context Similarity)
+anova(lmm.all_cond_roi.right, lmm.all_condXroi.right)
+
+#' ## CA1, right, spatial
+all_trials_body_DVSH_DVDH_CA1_right <-
+  all_trials_body_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "CA1_body") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+
+lmm.null.CA1.right.spatial <- lme4::lmer(z_r ~ (1|subj), data = all_trials_body_DVSH_DVDH_CA1_right, REML = FALSE)
+summary(lmm.null.CA1.right.spatial)
+
+lmm.DVSH_DVDH.no_random_slopes.CA1.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_DVSH_DVDH_CA1_right, REML = FALSE)
+summary(lmm.DVSH_DVDH.no_random_slopes.CA1.right)
+
+#' ### model comparison (Right CA1: Spatial Context Similarity)
+anova(lmm.null.CA1.right.spatial, lmm.DVSH_DVDH.no_random_slopes.CA1.right)
+
+#' ## CA1, right, temporal
+all_trials_body_SVSH_DVSH_CA1_right <-
+  all_trials_body_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "CA1_body") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+
+lmm.null.CA1.right.temporal <- lme4::lmer(z_r ~ (1|subj), data = all_trials_body_SVSH_DVSH_CA1_right, REML = FALSE)
+summary(lmm.null.CA1.right.temporal)
+
+lmm.SVSH_DVSH.no_random_slopes.CA1.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_SVSH_DVSH_CA1_right, REML = FALSE)
+summary(lmm.SVSH_DVSH.no_random_slopes.CA1.right)
+
+#' ### model comparison (Right CA1: Episodic Context Similarity)
+anova(lmm.null.CA1.right.temporal, lmm.SVSH_DVSH.no_random_slopes.CA1.right)
+
+#' ## CA23DG, right, spatial
+all_trials_body_DVSH_DVDH_CA23DG_right <-
+  all_trials_body_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "CA2_3_DG_body") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+
+lmm.null.CA23DG.right.spatial <- lme4::lmer(z_r ~ (1|subj), data = all_trials_body_DVSH_DVDH_CA23DG_right, REML = FALSE)
+summary(lmm.null.CA23DG.right.spatial)
+
+lmm.DVSH_DVDH.no_random_slopes.CA23DG.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_DVSH_DVDH_CA23DG_right, REML = FALSE)
+summary(lmm.DVSH_DVDH.no_random_slopes.CA23DG.right)
+
+#' ### model comparison (Right CA23DG: Spatial Context Similarity)
+anova(lmm.null.CA23DG.right.spatial, lmm.DVSH_DVDH.no_random_slopes.CA23DG.right)
+
+#' ## CA23DG, right, temporal
+all_trials_body_SVSH_DVSH_CA23DG_right <-
+  all_trials_body_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "CA2_3_DG_body") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+
+lmm.null.CA23DG.right.temporal <- lme4::lmer(z_r ~ (1|subj), data = all_trials_body_SVSH_DVSH_CA23DG_right, REML = FALSE)
+summary(lmm.null.CA23DG.right.temporal)
+
+lmm.SVSH_DVSH.no_random_slopes.CA23DG.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_body_SVSH_DVSH_CA23DG_right, REML = FALSE)
+summary(lmm.SVSH_DVSH.no_random_slopes.CA23DG.right)
+
+#' ### model comparison (Right CA23DG: Episodic Context Similarity)
+anova(lmm.null.CA23DG.right.temporal, lmm.SVSH_DVSH.no_random_slopes.CA23DG.right)
+
+#' # Test for interactions between conditions - Episodic Context Similarity
+#' ## Print out what's in dataframe before start running stats
 # yes, this is redundant with when the dataframe gets setup
 # but better to be redundant and ensure you know what you're working with!
 all_trials_body_temporal <- NULL
@@ -233,7 +295,7 @@ unique(all_trials_body_temporal$condition)
 unique(all_trials_body_temporal$hemi)
 unique(all_trials_body_temporal$roi)
 
-#' ### Model setup
+#' ## Model setup: Left
 # Now, we need to follow up the significant 3-way interaction in left hemi
 temporal_lmm_left <-
   all_trials_body_temporal %>%
@@ -253,10 +315,97 @@ summary(lmm.ss2)
 lmm.ss3 <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = temporal_lmm_left, REML=FALSE)
 summary(lmm.ss3)
 
-#' #### Compare models (left CA1 x left CA23DG: Episodic Context Similarity)
+#' ### Compare models (left CA1 x left CA23DG: Episodic Context Similarity)
 # roi and condition vs. roi*condition
 # this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
 anova(lmm.ss2, lmm.ss3)
+
+#' ## Model setup: Right
+temporal_lmm_right <-
+  all_trials_body_temporal %>%
+  dplyr::filter(hemi == "right")
+
+# print out what's in the dataframe so we're supersure before running stats
+head(temporal_lmm_right)
+unique(temporal_lmm_right$condition)
+unique(temporal_lmm_right$roi)
+unique(temporal_lmm_right$hemi)
+
+# condition, roi
+lmm.ss2.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = temporal_lmm_right, REML = FALSE)
+summary(lmm.ss2.right)
+
+# condition * roi
+lmm.ss3.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = temporal_lmm_right, REML=FALSE)
+summary(lmm.ss3.right)
+
+#' ### Compare models (right CA1 x right CA23DG: Episodic Context Similarity)
+# roi and condition vs. roi*condition
+# this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
+anova(lmm.ss2.right, lmm.ss3.right)
+
+#' # Test for interactions between conditions - Spatial Context Similarity
+#' ## Print out what's in dataframe before start running stats
+# yes, this is redundant with when the dataframe gets setup
+# but better to be redundant and ensure you know what you're working with!
+all_trials_body_spatial <- NULL
+all_trials_body_spatial <-
+  all_trials_body %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+head(all_trials_body_spatial)
+unique(all_trials_body_spatial$condition)
+unique(all_trials_body_spatial$hemi)
+unique(all_trials_body_spatial$roi)
+
+#' ## Model setup: Left
+# Now, we need to follow up the significant 3-way interaction in left hemi
+spatial_lmm_left <-
+  all_trials_body_spatial %>%
+  dplyr::filter(hemi == "left")
+
+# print out what's in the dataframe so we're supersure before running stats
+head(spatial_lmm_left)
+unique(spatial_lmm_left$condition)
+unique(spatial_lmm_left$roi)
+unique(spatial_lmm_left$hemi)
+
+# condition, roi
+lmm.ss2 <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = spatial_lmm_left, REML = FALSE)
+summary(lmm.ss2)
+
+# condition * roi
+lmm.ss3 <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = spatial_lmm_left, REML=FALSE)
+summary(lmm.ss3)
+
+#' ### Compare models (left CA1 x left CA23DG: Spatial Context Similarity)
+# roi and condition vs. roi*condition
+# this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
+anova(lmm.ss2, lmm.ss3)
+
+#' ## Model setup: Right
+spatial_lmm_right <-
+  all_trials_body_spatial %>%
+  dplyr::filter(hemi == "right")
+
+# print out what's in the dataframe so we're supersure before running stats
+head(spatial_lmm_right)
+unique(spatial_lmm_right$condition)
+unique(spatial_lmm_right$roi)
+unique(spatial_lmm_right$hemi)
+
+# condition, roi
+lmm.ss2.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = spatial_lmm_right, REML = FALSE)
+summary(lmm.ss2.right)
+
+# condition * roi
+lmm.ss3.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = spatial_lmm_right, REML=FALSE)
+summary(lmm.ss3.right)
+
+#' ### Compare models (right CA1 x right CA23DG: Spatial Context Similarity)
+# roi and condition vs. roi*condition
+# this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
+anova(lmm.ss2.right, lmm.ss3.right)
+
 
 #' # Plot (Figure 2)
 all_trials_body %>%
@@ -307,31 +456,7 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
-#' ### Run same analyses in right hemi
-temporal_lmm_right <-
-all_trials_body_temporal %>%
-  dplyr::filter(hemi == "right")
-
-# print out what's in the dataframe so we're supersure before running stats
-head(temporal_lmm_right)
-unique(temporal_lmm_right$condition)
-unique(temporal_lmm_right$roi)
-unique(temporal_lmm_right$hemi)
-
-# condition, roi
-lmm.ss2.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = temporal_lmm_right, REML = FALSE)
-summary(lmm.ss2.right)
-
-# condition * roi
-lmm.ss3.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = temporal_lmm_right, REML=FALSE)
-summary(lmm.ss3.right)
-
-#' #### Compare models (left CA1 x left CA23DG: Episodic Context Similarity)
-# roi and condition vs. roi*condition
-# this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
-anova(lmm.ss2.right, lmm.ss3.right)
-
-# #' # Plot (Supplemental)
+#' # Plot right (Supplemental)
 all_trials_body %>%
   dplyr::filter(condition != "anyVideo_sameHouse") %>%
   dplyr::filter(hemi == "right") %>%
