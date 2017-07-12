@@ -66,57 +66,67 @@ hemi_of_interest <- c("left", "right")
 conditions_of_interest <- c("diffVideo_diffHouse", "diffVideo_sameHouse", "sameVideo_sameHouse")
 group_subset <- data.frame()
 
-for(isubj in 1:length(unique(all_trials_z_better_names$subj))){
-  cur_subj <- unique(all_trials_z_better_names$subj)[isubj]
+#' # Iterate n times
+num_reps <- 10
 
-  # figure out current minimum number of trials
-  cur_min <- min_trial_nums_by_subj %>%
-    dplyr::ungroup() %>%
-    dplyr::filter(subj == cur_subj)
-  print(sprintf("Current minimum number of trials is %d for %s./n", cur_min$trial_nums, cur_subj))
+#' # Loop across subjects and randomly resample
+for(irep in 1:num_reps){
+  for(isubj in 1:length(unique(all_trials_z_better_names$subj))){
+    cur_subj <- unique(all_trials_z_better_names$subj)[isubj]
 
-  for(iroi in 1:length(rois_of_interest)){
-    cur_roi <- rois_of_interest[iroi]
-    print(cur_roi)
+    # figure out current minimum number of trials
+    cur_min <- min_trial_nums_by_subj %>%
+      dplyr::ungroup() %>%
+      dplyr::filter(subj == cur_subj)
+    print(sprintf("Current minimum number of trials is %d for %s./n", cur_min$trial_nums, cur_subj))
 
-    for(ihemi in 1:length(hemi_of_interest)){
-      cur_hemi <- hemi_of_interest[ihemi]
-      print(cur_hemi)
+    for(iroi in 1:length(rois_of_interest)){
+      cur_roi <- rois_of_interest[iroi]
+      print(cur_roi)
 
-      for(icond in 1:length(conditions_of_interest)){
-        cur_cond <- conditions_of_interest[icond]
-        print(cur_cond)
+      for(ihemi in 1:length(hemi_of_interest)){
+        cur_hemi <- hemi_of_interest[ihemi]
+        print(cur_hemi)
 
-        # subset df
-        cur_dat <- all_trials_z_better_names %>%
-          dplyr::filter(subj == cur_subj) %>%
-          dplyr::filter(roi == cur_roi) %>%
-          dplyr::filter(hemi == cur_hemi) %>%
-          dplyr::filter(condition == cur_cond) %>%
-          dplyr::mutate(rowids = attr(., "row.names")) #this returns integers instead of characters
+        for(icond in 1:length(conditions_of_interest)){
+          cur_cond <- conditions_of_interest[icond]
+          print(cur_cond)
 
-        # generate random sequence
-        cur_rand <- sample(seq(from = 1, to = dim(cur_dat)[1]), size = cur_min$trial_nums, replace = FALSE) %>%
-          as.data.frame() %>%
-          setNames("rowids") %>%
-          dplyr::arrange(rowids)
+          # subset df
+          cur_dat <- all_trials_z_better_names %>%
+            dplyr::filter(subj == cur_subj) %>%
+            dplyr::filter(roi == cur_roi) %>%
+            dplyr::filter(hemi == cur_hemi) %>%
+            dplyr::filter(condition == cur_cond) %>%
+            dplyr::mutate(rowids = attr(., "row.names")) #this returns integers instead of characters
 
-        # index current df by random sequence
-        # based on http://stackoverflow.com/questions/21916354/subsetting-by-multi-column-index-key-in-dplyr-have-data-table-soln
-        cur_subset <-
-          dplyr::semi_join(cur_dat, cur_rand, by = "rowids")
+          # generate random sequence
+          cur_rand <- sample(seq(from = 1, to = dim(cur_dat)[1]), size = cur_min$trial_nums, replace = FALSE) %>%
+            as.data.frame() %>%
+            setNames("rowids") %>%
+            dplyr::arrange(rowids)
 
-        # merge into group df
-        if(dim(group_subset)[1]==0){
-          group_subset <- cur_subset
-        } else {
-          group_subset <- dplyr::full_join(group_subset, cur_subset, by = intersect(colnames(group_subset), colnames(cur_subset)))
-        }
+          # index current df by random sequence
+          # based on http://stackoverflow.com/questions/21916354/subsetting-by-multi-column-index-key-in-dplyr-have-data-table-soln
+          cur_subset <-
+            dplyr::semi_join(cur_dat, cur_rand, by = "rowids")
 
-      } #icond
-    } #ihemi
-  } #iroi
-} #isubj
+          # merge into group df
+          if(dim(group_subset)[1]==0){
+            group_subset <- cur_subset
+          } else {
+            group_subset <- dplyr::full_join(group_subset, cur_subset, by = intersect(colnames(group_subset), colnames(cur_subset)))
+          }
+
+        } #icond
+      } #ihemi
+    } #iroi
+  } #isubj
+  lmm.reduced <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|subj), data = group_subset, REML = FALSE)
+  lmm.full <- lme4::lmer(z_r ~ condition*roi*hemi + (1|subj), data = group_subset, REML = FALSE)
+  results <- anova(lmm.reduced, lmm.full)
+  results$Chisq #put this into a dataframe indexed by irep
+} #irep
 
 #' # Graph
 #+ echo = FALSE
