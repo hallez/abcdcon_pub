@@ -67,10 +67,14 @@ conditions_of_interest <- c("diffVideo_diffHouse", "diffVideo_sameHouse", "sameV
 group_subset <- data.frame()
 
 #' # Iterate n times
+all_reps_start_time <- Sys.time()
 num_reps <- 10
 
 #' # Loop across subjects and randomly resample
+all_chisq <- data.frame() #initialize a dataframe
+
 for(irep in 1:num_reps){
+  irep_start_time <- Sys.time()
   for(isubj in 1:length(unique(all_trials_z_better_names$subj))){
     cur_subj <- unique(all_trials_z_better_names$subj)[isubj]
 
@@ -122,10 +126,16 @@ for(irep in 1:num_reps){
       } #ihemi
     } #iroi
   } #isubj
+  group_subset_left <-
+    group_subset %>%
+    dplyr::filter(hemi == "left")
   lmm.reduced <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|subj), data = group_subset, REML = FALSE)
   lmm.full <- lme4::lmer(z_r ~ condition*roi*hemi + (1|subj), data = group_subset, REML = FALSE)
   results <- anova(lmm.reduced, lmm.full)
-  results$Chisq #put this into a dataframe indexed by irep
+  all_chisq[irep,1]$chisq_value <- results$Chisq[2] # for some reason, first position is `NA`
+  all_chisq[irep,2]$repetition <- irep
+  irep_end_time <- Sys.time()
+  sprintf("repetition %d took %s seconds.", irep, ceiling((irep_end_time - irep_start_time)))
 } #irep
 
 #' # Graph
