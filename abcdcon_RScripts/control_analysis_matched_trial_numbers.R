@@ -129,11 +129,22 @@ for(irep in 1:num_reps){
   group_subset_left <-
     group_subset %>%
     dplyr::filter(hemi == "left")
+
   lmm.reduced <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|subj), data = group_subset, REML = FALSE)
   lmm.full <- lme4::lmer(z_r ~ condition*roi*hemi + (1|subj), data = group_subset, REML = FALSE)
   results <- anova(lmm.reduced, lmm.full)
-  all_chisq[irep,1]$chisq_value <- results$Chisq[2] # for some reason, first position is `NA`
-  all_chisq[irep,2]$repetition <- irep
+  if(dim(all_chisq)[1]==0) { #this is required to setup df properly
+    all_chisq[irep,1]$chisq_value <- results$Chisq[2] # for some reason, first position is `NA`
+    all_chisq[irep,2]$repetition <- irep
+    all_chisq[irep,3]$pval <- results$`Pr(>Chisq)`[2]
+    all_chisq[irep,4]$df <- results$`Chi Df`[2]
+  } else {
+    all_chisq[irep,]$chisq_value <- results$Chisq[2]
+    all_chisq[irep,]$repetition <- irep
+    all_chisq[irep,]$pval <- results$`Pr(>Chisq)`[2]
+    all_chisq[irep,]$df <- results$`Chi Df`[2]
+  }
+
   irep_end_time <- Sys.time()
   sprintf("repetition %d took %s seconds.", irep, ceiling((irep_end_time - irep_start_time)))
 } #irep
