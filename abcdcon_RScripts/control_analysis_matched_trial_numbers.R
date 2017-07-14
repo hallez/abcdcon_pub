@@ -68,7 +68,7 @@ group_subset <- data.frame()
 
 #' # Iterate n times
 all_reps_start_time <- Sys.time()
-num_reps <- 10
+num_reps <- 10000
 
 #' # Loop across subjects and randomly resample
 all_chisq <- data.frame() #initialize a dataframe
@@ -148,6 +148,18 @@ for(irep in 1:num_reps){
   irep_end_time <- Sys.time()
   sprintf("repetition %d took %s seconds.", irep, ceiling((irep_end_time - irep_start_time)))
 } #irep
+
+save(all_chisq, file = paste0(analyzed_mri_dir, sprintf('match_trialnums_%dreps_chisqvals.RData', num_reps)))
+
+#' # Plot histogram of chi-square values
+all_chisq %>%
+  ggplot2::ggplot(ggplot2::aes(chisq_value)) +
+  ggplot2::geom_histogram(binwidth = 0.25)
+
+ggplot2::ggsave(file = paste0(graph_fpath_out,
+                              halle::ensure_trailing_slash("matched-trial-nums"),
+                              sprintf("match_trialnums_%dreps_chisqvals_histogram.pdf", num_reps)),
+                width=8, height=6)
 
 #' # Graph
 #+ echo = FALSE
