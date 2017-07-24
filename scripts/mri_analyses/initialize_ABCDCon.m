@@ -22,6 +22,8 @@ addpath(genpath(fullfile(project_dir,'vendor')));
 rawMRIDir = [fullfile(project_dir,config.directories.raw_mri) filesep];
 analMRIDir = [fullfile(project_dir,config.directories.analyzed_mri) filesep];
 
+dropbox_dir = [fullfile(config.directories.dropbox_abcdcon) filesep];
+
 % stimulus directories
 practicestimdir = [fullfile(project_dir,config.directories.stimuli.practice) filesep];
 stimSceneDir = [fullfile(project_dir,config.directories.stimuli.object_in_scene) filesep];

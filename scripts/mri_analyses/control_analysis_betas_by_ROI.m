@@ -7,7 +7,7 @@ num_subjs = length(subjects);
 
 % setup flags
 SAVE_OUT_FLAG = 1;
-GRAPH_FLAG = 0;
+GRAPH_FLAG = 1;
 GRAPH_GROUP_FLAG = 1;
 ROIS_FLAG = 1;
 
@@ -18,6 +18,9 @@ roi_names = {'brCA2_3_DG_body', 'brCA1_body',...
     'brwhole_hippo'};
 num_rois = length(roi_names);
 
+% plotting setup
+plots_dir = fullfile(dropbox_dir, 'writeups', 'figures');
+
 % let's time to see how long this takes
 all_subjects_timer = tic;
 
@@ -25,10 +28,14 @@ all_subjects_timer = tic;
 for isub = 1:num_subjs
     % let's also time the length for each subject 
     cur_subj_timer = tic;
-    keyboard
     
     b.curSubj = ['s' num2str(subjects(isub),'%03d')];
     fprintf('------Working on subject %s------\n',b.curSubj)
+    
+    % make plotting output directory
+    if ~isdir(fullfile(plots_dir, b.curSubj))
+        mkdir(fullfile(plots_dir, b.curSubj))
+    end
     
     % setup variables within "b" that may change between subjects (ie,
     % re-set to defaults in case they've been overwritten from last
@@ -134,11 +141,14 @@ for isub = 1:num_subjs
     if GRAPH_FLAG
         % plot as a histogram
         fig = figure('Name', sprintf('%s %s: Histogram of beta means, by run',b.curSubj, roi_names{iroi}));
+        figname = fullfile(plots_dir, b.curSubj, sprintf('%s_histogram_by_run_%s', b.curSubj, roi_names{iroi}));
         for irun=1:num_runs
            subplot(num_runs,1,irun)
            histogram(all_subj_rois(isub).(['mean_',cur_roi_name]))
+           title(sprintf('%s %s: Histogram of beta means, Run %d',b.curSubj, roi_names{iroi}, irun))
         end
         add_subplot_axis_labels(fig,'Mean beta values', 'Count') %NB - this is a custom function
+        saveas(fig,figname,'eps') 
         clear fig
         
         % TODO: save out a single file for each subject w/ these figures 
@@ -189,6 +199,7 @@ if GRAPH_GROUP_FLAG
 %                max(max(all_subj_rois.mean_abs_z_ashs_right_brCA2_3_DG)) + xlim_zscore_buffer])
         end
         add_subplot_axis_labels(fig,'Mean absolute value z-scored beta','Count')
+        saveas(fig,fullfile(plots_dir, sprintf('all_subj_histogram_CA23DG_body')),'eps') 
         clear fig
 
         fig = figure('Name','CA1 body: Mean abs_z_beta values by subject');
@@ -199,20 +210,16 @@ if GRAPH_GROUP_FLAG
             subplot(num_subjs,2,row_counter) 
             histogram(all_subj_rois(isub).mean_abs_z_ashs_left_brCA1_body(:,1))
             title(sprintf('%s: left',all_subj_rois(isub).ids{:}))
-%             % set xlimits so consistent
-%             xlim([min(min(all_subj_rois.mean_abs_z_ashs_left_brCA1)) - xlim_zscore_buffer,...
-%                max(max(all_subj_rois.mean_abs_z_ashs_left_brCA1)) + xlim_zscore_buffer])
 
             % plot the right hemisphere in the right column
             row_counter = row_counter + 1;
             subplot(num_subjs,2,row_counter)
             histogram(all_subj_rois(isub).mean_abs_z_ashs_right_brCA1(:,1))
             title(sprintf('%s: right',all_subj_rois(isub).ids{:}))
-%             % set xlimits so consistent
-%             xlim([min(min(all_subj_rois.mean_abs_z_ashs_right_brCA1)) - xlim_zscore_buffer,...
-%                max(max(all_subj_rois.mean_abs_z_ashs_right_brCA1)) + xlim_zscore_buffer])
+
         end
         add_subplot_axis_labels(fig,'Mean absolute value z-scored beta','Count')
+        saveas(fig,fullfile(plots_dir, sprintf('all_subj_histogram_CA1_body')),'eps') 
         clear fig
     end %ROIS_FLAG
 end
