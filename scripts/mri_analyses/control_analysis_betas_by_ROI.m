@@ -139,21 +139,23 @@ for isub = 1:num_subjs
 
     %% graph variability across time (ie, across trials)
     if GRAPH_FLAG
-        % plot as a histogram
-        fig = figure('Name', sprintf('%s %s: Histogram of beta means, by run',b.curSubj, roi_names{iroi}));
-        figname = fullfile(plots_dir, b.curSubj, sprintf('%s_histogram_by_run_%s', b.curSubj, roi_names{iroi}));
-        for irun=1:num_runs
-           subplot(num_runs,1,irun)
-           histogram(all_subj_rois(isub).(['mean_',cur_roi_name]))
-           title(sprintf('%s %s: Histogram of beta means, Run %d',b.curSubj, roi_names{iroi}, irun))
-        end
-        add_subplot_axis_labels(fig,'Mean beta values', 'Count') %NB - this is a custom function
-        saveas(fig,figname,'eps') 
-        clear fig
-        
-        % TODO: save out a single file for each subject w/ these figures 
-        % close figures so don't overload
-        close all
+        for iroi = 1:num_rois
+            % plot as a histogram
+            fig = figure('Name', sprintf('%s %s: Histogram of beta means, by run',b.curSubj, roi_names{iroi}));
+            figname = fullfile(plots_dir, b.curSubj, sprintf('%s_histogram_by_run_%s', b.curSubj, roi_names{iroi}));
+            for irun=1:num_runs
+               subplot(num_runs,1,irun)
+               histogram(all_subj_rois(isub).(['mean_',cur_roi_name]))
+               title(sprintf('%s %s: Histogram of beta means, Run %d',b.curSubj, roi_names{iroi}, irun))
+            end
+            add_subplot_axis_labels(fig,'Mean beta values', 'Count') %NB - this is a custom function
+            saveas(fig,figname,'eps') 
+            clear fig
+
+            % TODO: save out a single file for each subject w/ these figures 
+            % close figures so don't overload
+            close all
+        end %iroi
     end %GRAPH_FLAG
     
     % clear subject-level variable before moving onto next subject
@@ -192,7 +194,7 @@ if GRAPH_GROUP_FLAG
             % plot the right hemisphere in the right column
             row_counter = row_counter + 1;
             subplot(num_subjs,2,row_counter)
-            histogram(all_subj_rois(isub).mean_abs_z_ashs_right_brCA2_3_DG(:,1))
+            histogram(all_subj_rois(isub).mean_abs_z_ashs_right_brCA2_3_DG_body(:,1))
             title(sprintf('%s: right',all_subj_rois(isub).ids{:}))
 %             % set xlimits so consistent
 %             xlim([min(min(all_subj_rois.mean_abs_z_ashs_right_brCA2_3_DG)) - xlim_zscore_buffer,...
@@ -214,7 +216,7 @@ if GRAPH_GROUP_FLAG
             % plot the right hemisphere in the right column
             row_counter = row_counter + 1;
             subplot(num_subjs,2,row_counter)
-            histogram(all_subj_rois(isub).mean_abs_z_ashs_right_brCA1(:,1))
+            histogram(all_subj_rois(isub).mean_abs_z_ashs_right_brCA1_body(:,1))
             title(sprintf('%s: right',all_subj_rois(isub).ids{:}))
 
         end
