@@ -147,6 +147,7 @@ for(irep in 1:num_reps){
 
   irep_end_time <- Sys.time()
   sprintf("repetition %d took %s seconds.", irep, ceiling((irep_end_time - irep_start_time)))
+  save(all_chisq, file = paste0(analyzed_mri_dir, sprintf('match_trialnums_%dreps_chisqvals.RData', irep)))
 } #irep
 
 save(all_chisq, file = paste0(analyzed_mri_dir, sprintf('match_trialnums_%dreps_chisqvals.RData', num_reps)))
