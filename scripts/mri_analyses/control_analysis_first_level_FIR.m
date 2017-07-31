@@ -44,7 +44,6 @@ for isub=1:length(subjects)
         continue;
     end %try
 
-    batch_contrasts(b);
     cd(curdir);
 
 end %isub
