@@ -39,7 +39,7 @@ graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
 
 #' ## Setup other variables
 #' ### Flags
-SAVE_GRAPHS_FLAG <- 0
+SAVE_GRAPHS_FLAG <- 1
 
 #+ label="Load data"
 #' ## Load in PS data
