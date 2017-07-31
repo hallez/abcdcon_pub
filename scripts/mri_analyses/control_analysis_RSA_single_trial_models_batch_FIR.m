@@ -1,4 +1,4 @@
-function [] = RSA_single_trial_models_batch_FIR()
+function [] = control_analysis_RSA_single_trial_models_batch_FIR()
 
 % Halle R. Dimsdale-Zucker
 % Loop across subjects, runs, and trials to estimate single trial betas for
