@@ -275,6 +275,8 @@ data$trialTypeKey <- car::recode(factor(data$trialType),c("1='BrownRm1_RHit_HCRC
                                                             21='Miss';22='CR';23='FA_R';24='FA_F';
                                                             99='ExcludeTrial'"))
 
+levels(data$trialTypeKey)
+
 #' ## Switch to "o" dataframe
 # This way, onsets information is separate from what gets saved out in group file
 o <- NULL
@@ -316,6 +318,25 @@ o$sanityCheck_key[data$trialTypeKey=="Miss" & data$studyLocationHC=="Brown"] <- 
 o$sanityCheck_key[data$trialTypeKey=="Miss" & data$studyLocationHC=="Gray"] <- "Gray_FHitsANDMisses"
 # eliminate "Miss" from being counted as a level
 o$sanityCheck_key <- droplevels(o$sanityCheck_key)
+
+#' ## Model just by memory, ignoring all contexts
+# This should include RHits, Fhits, Misses, CR, FA, and ExcludeTrials
+o$byMemory_model <- car::recode(factor(data$trialTypeKey),c("'BrownRm1_RHit_HCRC'=1;'BrownRm2_RHit_HCRC'=1;'BrownRm2_RHit_HCRI'=1;'BrownRm1_RHit_HCRI'=1;'Brown_RHit_HI'=1;
+                                                               'GrayRm1_RHit_HCRC'=1;'GrayRm2_RHit_HCRC'=1;'GrayRm2_RHit_HCRI'=1;'GrayRm1_RHit_HCRI'=1;'Gray_RHit_HI'=1;
+                                                               'BrownRm1_FHit_HCRC'=2;'BrownRm2_FHit_HCRC'=2;'BrownRm1_FHit_HCRI'=2;'BrownRm2_FHit_HCRI'=2;'Brown_FHit_HI'=2;
+                                                               'GrayRm1_FHit_HCRC'=2;'GrayRm2_FHit_HCRC'=2;'GrayRm1_FHit_HCRI'=2;'GrayRm2_FHit_HCRI'=2;'Gray_FHit_HI' =2;
+                                                               'Miss'=3;
+                                                               'CR'=4;
+                                                               'FA_R'=5;'FA_F'=5;
+                                                               'ExcludeTrial'=99"))
+#' ### Revalue "key" for regressors in memory model
+# no need to recode misses or excluded trials b/c they already have the correct labels
+o$byMemory_key <- car::recode(factor(data$trialTypeKey),c("'BrownRm1_RHit_HCRC'='RHit';'BrownRm2_RHit_HCRC'='RHit';'BrownRm2_RHit_HCRI'='RHit';'BrownRm1_RHit_HCRI'='RHit';'RHit_HI'='RHit';'Brown_RHit_HI'='RHit';
+                                                             'GrayRm1_RHit_HCRC'='RHit';'GrayRm2_RHit_HCRC'='RHit';'GrayRm2_RHit_HCRI'='RHit';'GrayRm1_RHit_HCRI'='RHit';'RHit_HI'='RHit';'Gray_RHit_HI'='RHit';
+                                                             'BrownRm1_FHit_HCRC'='FHit';'BrownRm2_FHit_HCRC'='FHit';'BrownRm1_FHit_HCRI'='FHit';'BrownRm2_FHit_HCRI'='FHit';'Brown_FHit_HI'='FHit';
+                                                             'GrayRm1_FHit_HCRC'='FHit';'GrayRm2_FHit_HCRC'='FHit';'GrayRm1_FHit_HCRI'='FHit';'GrayRm2_FHit_HCRI'='FHit';'Gray_FHit_HI' ='FHit';
+                                                             'FA_R'='FA';'FA_F'='FA'"))
+levels(o$byMemory_key)
 
 #' # Save out
 #' ## Onsets
