@@ -248,3 +248,36 @@ loc_collapseHouse_rates %>%
                    sd_resprate = sd(resprate),
                    num_subj = length(resprate),
                    sem_resprate = sd_resprate/sqrt(num_subj))
+
+#' # Compute RTs for object recog (by condition)
+recdata <- data %>%
+  # drop weird responses ($, xx, etc.)
+  dplyr::filter(MemResp=="R" | MemResp =="F" | MemResp == "N")
+
+#' ## Score memory data
+oldmask <- which(recdata$CorrectMemResp== "Studied")
+newmask <- which(recdata$CorrectMemResp== "New")
+
+Rresp <- which(recdata$MemResp == "R")
+Fresp <- which(recdata$MemResp == "F")
+Nresp <- which(recdata$MemResp == "N")
+
+recdata$itemScore <- factor(NA,levels=c("Rec","Fam","Miss","R-FA","F-FA","CR"))
+recdata$itemScore[intersect(oldmask,Rresp)] <- "Rec"
+recdata$itemScore[intersect(oldmask,Fresp)] <- "Fam"
+recdata$itemScore[intersect(oldmask,Nresp)] <- "Miss"
+recdata$itemScore[intersect(newmask,Rresp)] <- "R-FA"
+recdata$itemScore[intersect(newmask,Fresp)] <- "F-FA"
+recdata$itemScore[intersect(newmask,Nresp)] <- "CR"
+
+table(recdata$subj_num,recdata$itemScore)
+
+#' ## RTs by item memory
+recdata %>%
+  dplyr::group_by(itemScore) %>%
+  dplyr::summarise(mean_RT = mean(MemRT, na.rm = TRUE))
+
+#' ## RTs by item and source memory
+recdata %>%
+  dplyr::group_by(itemScore, LocationResp.HC) %>%
+  dplyr::summarise(mean_RT = mean(MemRT, na.rm = TRUE))
