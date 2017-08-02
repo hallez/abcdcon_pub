@@ -6,7 +6,7 @@
 initialize_ABCDCon
 
 roi_dirs = {'ashs_left','ashs_right'};
-b.all_ROIs = {'brCA1_body', 'brCA2_3_DG_body', 'brwhole_hippo.nii'};
+b.all_ROIs = {'brCA1_body', 'brCA2_3_DG_body'};
 FIR_order = 10; % this is a parameter that's set in `control_analysis_first_level_FIR.m`
 
 %% Loop across subjects 
@@ -75,19 +75,15 @@ for isub=1:length(subjects)
             if size(cur_betas,1) > 0
                 % take the mean across all voxels w/in a given beta
                 beta_means_all_runs = nanmean(cur_betas);
-            end %if size(cur_betas,1) > 0
-
-            % save out 
-            if size(betas_all_runs,1) > 0
+                
                 % save out the nan-means for all trials across all runs
                 fname_beta_means_out = cellstr([b.cur_ROI_dir, filesep, roi_name, '_FIR_beta_nan_means_all_runs']);
                 save(fname_beta_means_out{:},'beta_means_all_runs')
                 
                 fname_ids_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_FIR_beta_ids_all_runs']);
                 save(fname_ids_out{:},'beta_ids')
-            end
+            end %if size(cur_betas,1) > 0
 
-            
         end %iroi
         
     end %idir=
