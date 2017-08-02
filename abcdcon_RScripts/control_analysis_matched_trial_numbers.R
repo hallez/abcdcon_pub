@@ -68,7 +68,7 @@ group_subset <- data.frame()
 
 #' # Iterate n times
 all_reps_start_time <- Sys.time()
-num_reps <- 10000
+num_reps <- 1000
 
 #' # Loop across subjects and randomly resample
 all_chisq <- data.frame() #initialize a dataframe
