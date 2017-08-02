@@ -44,113 +44,47 @@ for isub=1:length(subjects)
             b.cur_roi.img = spm_read_vols(b.cur_roi);
             [path, roi_name, ext] = fileparts(b.cur_roi.fname);
             
-            %% Loop across runs            
-            for irun=1:length(b.runs)
+            % determine how many betas the current subject has
+            all_cur_betas = dir(fullfile(b.modelDir, b.curSubj,'beta*.img'));
+            num_betas = length(all_cur_betas);
 
-                b.curRun = b.runs{irun};
-                fprintf('Working on: %s\n',b.curRun);
-                                
-                % read in current regressor file
-                load(fullfile(b.modelDir, b.curSubj, sprintf('byMemory_model_%s_%s_regs.mat', b.curSubj, b.curRun)))
-                num_regs = length(names); % `names` is read in from the .mat file
-                num_betas = 19; %num_regs * FIR_order; % there are technically also betas for motion and spike regressors, but we don't care about those for now
-                
-                %% Loop across betas
-                curRunDir = [b.modelDir,filesep,b.curSubj,filesep,b.curRun];                
-                curDirs = dir(curRunDir);
+            % initialize a variable the size of the current ROI
+            % (rows) x number of betas of interest
+            cur_betas = nan(size(find(b.cur_roi.img > 0),1), num_betas);
+            % initialize a variable for the trial IDs 
+            beta_ids = cell(1,num_betas);
 
-                % initialize a variable the size of the current ROI
-                % (rows) x number of betas of interest
-                cur_betas = nan(size(find(b.cur_roi.img > 0),1), num_betas);
-                % initialize a variable for the trial IDs 
-                cur_reg_ids = cell(1,num_betas);
+            for ibeta=1:num_betas
+                % read in the current beta
+                b.cur_beta=spm_vol(fullfile(b.modelDir, b.curSubj, sprintf('beta_%04d.img', ibeta)));
+                b.cur_beta.img = spm_read_vols(b.cur_beta);
 
-                for ibeta=1:num_betas
-                    % read in the current beta
-                    b.cur_beta=spm_vol(fullfile(b.modelDir, b.curSubj, sprintf('beta_%04d.img', ibeta)));
-                    b.cur_beta.img = spm_read_vols(b.cur_beta);
+                % apply current ROI mask to current beta image,
+                % save results into a voxel x trial pattern matrix
+                cur_betas(:,ibeta) = b.cur_beta.img(b.cur_roi.img > 0);
 
-                    % apply current ROI mask to current beta image,
-                    % save results into a voxel x trial pattern matrix
-                    cur_betas(:,ibeta) = b.cur_beta.img(b.cur_roi.img > 0);
+                % figure out trial-specific label
+                pat = '^spm_spm:beta \(\d{4}\) \- Sn\(\d{1}\) (?<trial>\w+)';
+                n = regexp(b.cur_beta.descrip, pat, 'names');
+                pat2 = '^spm_spm:beta \(\d{4}\) \- Sn\((?<runnum>\d+)';
+                n2 = regexp(b.cur_beta.descrip, pat2, 'names');
 
-                    % figure out trial-specific label
-                    % NB: could now do this from the IDs file 
-                    [TOKEN, TRIAL_LBL] = strtok(cellstr(b.cur_beta.descrip),'R'); % ADAPT THIS SO WORKS FOR ALL REGRESSOR NAMES
-                    [REG_NAME, REMAIN] = strtok(TRIAL_LBL,'*');
-                    [TOKEN, REG_NUM] = strtok(TRIAL_LBL,'(');
-                    cur_reg_ids(:,ibeta) = strcat(REG_NAME, '_', REG_NUM);
+                beta_ids{:,ibeta} = sprintf('%s_beta%02d_run%s',n.trial, ibeta, n2.runnum);
+            end %ibeta= 
 
-                end %ibeta=  
-                keyboard
-                
-                if size(cur_betas,1) > 0
-                    % put the current pattern (and ids) into a variable
-                    % across runs
-                    % FIGURE OUT HOW TO ADAPT IDEA OF `COL_COUNTER`
-                    pattern_all_runs(:,col_counter + 1:col_counter + num_trials) = cur_betas;
-                    pattern_ids_all_runs(1,col_counter + 1:col_counter + num_trials) = cur_reg_ids;
-                    
-                    % take the mean across all voxels w/in a given beta
-                    trial_means = nanmean(cur_betas);
-                    trial_means_all_runs(1, col_counter + 1:col_counter + num_trials) = trial_means;
-                end %if size(pattern,1) > 0
-                
-                col_counter = col_counter + num_trials; 
-                
-                % clear variables that change for each run loop
-                clear cur_pattern cur_reg_ids z_cur_pattern
+            if size(cur_betas,1) > 0
+                % take the mean across all voxels w/in a given beta
+                beta_means_all_runs = nanmean(cur_betas);
+            end %if size(cur_betas,1) > 0
 
-            end %irun=
-           
-            % save out pattern matrix
-            % deal w/ when have no patterns
-            % will happen for zeros ROIs
-            if size(pattern_all_runs,1) > 0
-                % first, let's get rid of rows w/ bad voxels and then NaN
-                % out trials that need to be removed (either on the basis
-                % of behavior or being a "bad" beta)
-                % we'll be naughty and just keep overwriting
-                % `pattern_all_runs`
-                %
-                % NB: this elimination of bad voxels (rows) and bad trials 
-                % (columns) is done in a 2-step process so don't end up in
-                % a situation where have NaN values in rows AND columns
-                % because then when go to compute correlations, this would
-                % result in a matrix of NaNs
-                %
-                % based on: http://www.mathworks.com/matlabcentral/answers/68510-remove-rows-or-cols-whose-elements-are-all-nan
-                pattern_all_runs = pattern_all_runs(all(~isnan(pattern_all_runs),2),:);
-                z_pattern_all_runs = z_pattern_all_runs(all(~isnan(z_pattern_all_runs),2),:);
-                
-                % now, NaN out bad trials 
-                % we do NOT want to eliminate these columns b/c then this
-                % will get tricky when want to match up with trial IDs
-                pattern_all_runs(:,logical(ids.mem_resp_scored_numeric == 99)) = NaN;
-                z_pattern_all_runs(:,logical(ids.mem_resp_scored_numeric == 99)) = NaN;
-                
-                % NOW, we can finally save some stuff out
-                fname_pattern_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_pattern_mtx_no_outlier_trials_all_runs']);
-                save(fname_pattern_out{:},'pattern_all_runs')
-                
-                fname_ids_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_pattern_mtx_ids_no_outlier_trials_all_runs']);
-                save(fname_ids_out{:},'pattern_ids_all_runs')
-                
-                % take correlations of the z-scored patterns
-                % this should help remove the univariate effects
-                z_pattern_corr = corr(z_pattern_all_runs);
-                fname_z_corr_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_z_pattern_corr_no_outlier_trials_all_runs']);
-                save(fname_z_corr_out{:}, 'z_pattern_corr')
-                                
-                % take correlation across all voxels and all trials
-                % and save this out too 
-                pattern_corr = corr(pattern_all_runs);
-                fname_corr_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_pattern_corr_no_outlier_trials_all_runs']);
-                save(fname_corr_out{:},'pattern_corr')
-                
+            % save out 
+            if size(betas_all_runs,1) > 0
                 % save out the nan-means for all trials across all runs
-                fname_trial_means_out = cellstr([b.cur_ROI_dir, filesep, roi_name, '_trial_nan_means_all_runs']);
-                save(fname_trial_means_out{:},'trial_means_all_runs')
+                fname_beta_means_out = cellstr([b.cur_ROI_dir, filesep, roi_name, '_FIR_beta_nan_means_all_runs']);
+                save(fname_beta_means_out{:},'beta_means_all_runs')
+                
+                fname_ids_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_FIR_beta_ids_all_runs']);
+                save(fname_ids_out{:},'beta_ids')
             end
 
             
@@ -159,6 +93,6 @@ for isub=1:length(subjects)
     end %idir=
     
     tEnd_subj =  toc(subj_timer);
-    fprintf('Extracting patterns for %s took %d minutes and %f seconds.\n',b.curSubj,floor(tEnd_subj/60),rem(tEnd_subj,60))
+    fprintf('Extracting betas for %s took %d minutes and %f seconds.\n',b.curSubj,floor(tEnd_subj/60),rem(tEnd_subj,60))
 end %isub
 
