@@ -1,0 +1,123 @@
+#' ---
+#' title: ABCDCon FIR Control Analysis
+#' author: Halle R. Dimsdale-Zucker
+#' output:
+#'  html_document:
+#'    toc: true
+#'    toc_depth: 4
+#'    toc_float:
+#'      collapsed: false
+#'      smooth_scroll: false
+#'    number_sections: true
+#'    theme: spacelab
+#' ---
+
+#+ initialize, warning = FALSE, message = FALSE
+devtools::load_all()
+
+# add dplyr with library()
+# NB: this is non-standard
+# correct way would be to make this script into a function,
+# store in the R/ directory,
+# and use @importFrom dplyr "%>%",
+# but this is incompatible with getting in-line results with code in knitr output
+library(dplyr)
+
+#' # Setup
+#' ## Load config file
+project_dir <- ("../")
+config <- yaml::yaml.load_file(paste0(project_dir, "config.yml"))
+
+#' ## Set paths as variables
+analyzed_mri_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_mri))
+raw_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$raw_behavioral))
+analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_behavioral))
+dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
+graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
+                          halle::ensure_trailing_slash("writeups"),
+                          halle::ensure_trailing_slash("figures"))
+
+#' ## Setup other variables
+#' ### Flags
+SAVE_GRAPHS_FLAG <- 1
+
+#' ### Included subjects
+subjects <- c(1:2, 6:14, 18:21, 23:30)
+subj_formatted <- NULL
+for(isub in 1:length(subjects)){
+  subj_formatted[isub] <- halle::format_three_digit_subject_id(subjects[isub])
+}
+
+#' ### Other variables (e.g., ROIs of interest)
+hemis <- c("ashs_left", "ashs_right")
+ROIs <- c("brCA1_body", "brCA2_3_DG_body")
+all_betas <- data.frame()
+
+#' # Load in data across hemis, ROIs, and subjects
+for(ihemi in 1:length(hemis)){
+  cur_hemi <- hemis[ihemi]
+
+  for(iroi in 1:length(ROIs)){
+    cur_roi <- ROIs[iroi]
+
+    for(isubj in 1:length(subj_formatted)){
+      cur_subj <- subj_formatted[isubj]
+
+      cur_betas_fpath <- file.path(analyzed_mri_dir, cur_subj, 'ROIs', cur_hemi, sprintf('%s_FIR_beta_nan_means_all_runs.mat', cur_roi))
+      cur_ids_fpath <- file.path(analyzed_mri_dir, cur_subj, 'ROIs', cur_hemi, sprintf('%s_FIR_beta_ids_all_runs.mat', cur_roi))
+      if(file.exists(cur_betas_fpath)){
+        cur_betas <- as.data.frame(R.matlab::readMat(cur_betas_fpath))
+        cur_ids <- as.data.frame(R.matlab::readMat(cur_ids_fpath))
+
+        # --- Label `cur_betas` w/ `cur_ids` ---
+        # there's probably a better dplyr way to do this, but works (and is the same as in `pattern_similarity_no_outlier_trials_load_data_btwn_runs`)
+        # will get the following warning - `attributes are not identical across measure variables; they will be dropped `
+        cur_ids_fmt <- cur_ids %>%
+          tidyr::gather()
+
+        cur_betas_w_ids <- cur_betas
+        colnames(cur_betas_w_ids) <- cur_ids_fmt$value
+
+        # --- Flip dataframe around so have rows instead of cols ---
+        cur_betas_tidy <- cur_betas_w_ids %>%
+          tidyr::gather(key = regressor_type, value = mean_beta_val) %>%
+          dplyr::mutate(subj_id = cur_subj,
+                        roi = cur_roi,
+                        hemi = cur_hemi)
+
+        # --- Put into a group data frame ---
+        if(dim(all_betas)[1]==0){
+          all_betas <- cur_betas_tidy
+        } else {
+          all_betas <- dplyr::full_join(all_betas, cur_betas_tidy, by = intersect(names(all_betas), names(cur_betas_tidy)))
+        } #if dim(all_betas
+
+      } else {
+        print(sprintf("Current mean betas file %s does not exist. Continuing on.", cur_betas_fpath))
+        next
+      } #if(file.exists
+    }# for isubj
+  } #for iroi
+} #for ihemi
+
+#' # Tidy up group betas dataframe
+all_betas_tidy <- all_betas %>%
+  tidyr::separate(regressor_type, into = c("regressor_name", "beta_ID", "run_number"), sep = "_") %>%
+  dplyr::mutate(beta_number_bare = sub("beta", "", beta_ID)) %>%
+  dplyr::mutate(beta_number = as.numeric(beta_number_bare)) %>%
+  dplyr::mutate(beta_fact = as.factor(beta_number))
+# PROBLEM: Figure out how to revalue beta_number across runs (and across regressors) so that have 1:FIR order (ie, 10) for each regressor type
+
+#' # Plot betas, by time point
+all_betas_tidy %>%
+  dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(run_number == "run1") %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_number, y = mean_beta_val, color = roi)) +
+  ggplot2::geom_line() +
+  ggplot2::facet_grid(.~hemi)
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(graph_fpath_out,
+                                "FIR_betas_RHits.pdf"),
+                  width=8, height=6)
+}
