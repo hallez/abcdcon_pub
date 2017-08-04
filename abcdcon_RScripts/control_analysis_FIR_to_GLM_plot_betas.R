@@ -115,13 +115,25 @@ all_betas_tidy <- all_betas %>%
   dplyr::mutate(change_val = c(FALSE, all_betas_tidy$regressor_name[-1] == all_betas_tidy$regressor_name[-length(all_betas_tidy$regressor_name)])) %>%
   # based on https://stackoverflow.com/questions/30793033/r-add-columns-indicating-start-and-end-for-a-sequence-within-columns (see setup in question post)
   dplyr::group_by(subj_id, hemi, roi, regressor_name, run_number) %>%
-  dplyr::mutate(beta_seq = seq_along(regressor_name))
+  dplyr::mutate(beta_seq = seq_along(regressor_name)) %>%
+  dplyr::mutate(beta_seq_fact = as.factor(beta_seq)) %>%
+  dplyr::ungroup()
 
 #' # Plot betas, by time point
+#' ## Print what summarized values should be
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::group_by(hemi, roi, beta_seq) %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE))
+
+#' ## Plot
+all_betas_tidy %>%
+  dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::group_by(hemi, roi, beta_seq) %>%
+  # have to use a numeric variable so `geom_smooth` will work
   ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = mean_beta_val, color = roi)) +
-  ggplot2::geom_line() +
+  # based on: https://stackoverflow.com/questions/26020142/adding-shade-to-r-lineplot-denotes-standard-error
+  ggplot2::geom_smooth(method="loess", se=TRUE, level = 0.95, ggplot2::aes(fill=roi), alpha=0.3) +
   ggplot2::facet_grid(.~hemi)
 
 if(SAVE_GRAPHS_FLAG == 1){
