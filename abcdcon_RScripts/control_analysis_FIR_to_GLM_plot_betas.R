@@ -110,9 +110,6 @@ all_betas_tidy <- all_betas %>%
   dplyr::filter(regressor_name %in% c("RHit", "FHit", "FA", "CR", "Miss")) %>%
   # ensure that trials are in order (b/c sequencing betas assumes this)
   dplyr::arrange(subj_id, hemi, roi, run_number, beta_ID) %>%
-  # figure out where a new regressor starts (this isn't used, but is helpfor for double checking)
-  # based on https://stackoverflow.com/questions/40367685/check-if-one-element-equal-the-previous-element-r
-  dplyr::mutate(change_val = c(FALSE, all_betas_tidy$regressor_name[-1] == all_betas_tidy$regressor_name[-length(all_betas_tidy$regressor_name)])) %>%
   # based on https://stackoverflow.com/questions/30793033/r-add-columns-indicating-start-and-end-for-a-sequence-within-columns (see setup in question post)
   dplyr::group_by(subj_id, hemi, roi, regressor_name, run_number) %>%
   dplyr::mutate(beta_seq = seq_along(regressor_name)) %>%
