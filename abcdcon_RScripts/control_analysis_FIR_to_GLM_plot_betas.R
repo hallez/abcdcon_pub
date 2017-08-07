@@ -114,26 +114,29 @@ all_betas_tidy <- all_betas %>%
   dplyr::group_by(subj_id, hemi, roi, regressor_name, run_number) %>%
   dplyr::mutate(beta_seq = seq_along(regressor_name)) %>%
   dplyr::mutate(beta_seq_fact = as.factor(beta_seq)) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>%
+  # create better ROI labels for plots
+  dplyr::mutate(roi_lbl = ifelse(roi == "brCA1_body", "CA1",
+                                 ifelse(roi == "brCA2_3_DG_body", "CA23DG", roi)))
 
 #' # Plot betas, by time point
 #' ## Print what summarized values should be
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi, beta_seq) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE))
 
 #' ## Plot
 #' ### both hemi
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi, beta_seq) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
-  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi)) +
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
@@ -150,14 +153,14 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### just left hemi
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi, beta_seq) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
-  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi)) +
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val))  +
@@ -170,21 +173,21 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
-#' ### just left hemi, facet by ROI
+#' ### just left hemi, facet by roi_lbl
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi, beta_seq) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
-  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi)) +
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
-  ggplot2::facet_grid(.~roi)  +
+  ggplot2::facet_grid(.~roi_lbl)  +
   ggplot2::ylab("mean beta value") +
   ggplot2::xlab("FIR timepoint")
 
@@ -197,11 +200,11 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### geom_smooth - this looks good, but does NOT show the true mean of the data
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi, beta_seq) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   # have to use a numeric variable so `geom_smooth` will work
-  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = mean_beta_val, color = roi)) +
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = mean_beta_val, color = roi_lbl)) +
   # based on: https://stackoverflow.com/questions/26020142/adding-shade-to-r-lineplot-denotes-standard-error
-  ggplot2::geom_smooth(method="loess", se=TRUE, level = 0.95, ggplot2::aes(fill=roi), alpha=0.3) +
+  ggplot2::geom_smooth(method="loess", se=TRUE, level = 0.95, ggplot2::aes(fill=roi_lbl), alpha=0.3) +
   ggplot2::facet_grid(.~hemi)  +
   ggplot2::ylab("loess fit mean beta value") +
   ggplot2::xlab("FIR timepoint")
