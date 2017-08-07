@@ -137,7 +137,9 @@ all_betas_tidy %>%
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
-  ggplot2::facet_grid(.~hemi)
+  ggplot2::facet_grid(.~hemi) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint")
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
@@ -158,7 +160,9 @@ all_betas_tidy %>%
   ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
-  ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val))
+  ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val))  +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint")
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
@@ -180,7 +184,9 @@ all_betas_tidy %>%
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
-  ggplot2::facet_grid(.~roi)
+  ggplot2::facet_grid(.~roi)  +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint")
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
@@ -196,7 +202,9 @@ all_betas_tidy %>%
   ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = mean_beta_val, color = roi)) +
   # based on: https://stackoverflow.com/questions/26020142/adding-shade-to-r-lineplot-denotes-standard-error
   ggplot2::geom_smooth(method="loess", se=TRUE, level = 0.95, ggplot2::aes(fill=roi), alpha=0.3) +
-  ggplot2::facet_grid(.~hemi)
+  ggplot2::facet_grid(.~hemi)  +
+  ggplot2::ylab("loess fit mean beta value") +
+  ggplot2::xlab("FIR timepoint")
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
