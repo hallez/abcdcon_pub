@@ -150,6 +150,28 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
+#' ### both hemi, no errorbars
+all_betas_tidy %>%
+  dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val) %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point() +
+  ggplot2::facet_grid(.~hemi) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint")
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(graph_fpath_out,
+                                "FIR_betas_RHits_geomline_both-hemi_no-errorbars.pdf"),
+                  width=8, height=6)
+}
+
 #' ### just left hemi
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
