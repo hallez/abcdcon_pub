@@ -7,7 +7,7 @@ num_subjs = length(subjects);
 
 % setup flags
 SAVE_OUT_FLAG = 1;
-GRAPH_FLAG = 1;
+GRAPH_FLAG = 0;
 GRAPH_GROUP_FLAG = 1;
 ROIS_FLAG = 1;
 
@@ -168,6 +168,13 @@ for isub = 1:num_subjs
     tEnd_subj =  toc(cur_subj_timer);
     fprintf('Processing %s took %d minutes and %f seconds.\n',b.curSubj,floor(tEnd_subj/60),rem(tEnd_subj,60))
 end %isub
+
+keyboard
+if(ROIS_FLAG)
+    % save out mean betas for all subjects
+    save(fullfile(plots_dir, 'allSubj_allROI_means.mat'), 'all_subj_rois')
+end
+keyboard
 
 tEnd_all_subjects = toc(all_subjects_timer);
 fprintf('\nRunning all those subjects took %d minutes and %f seconds. \n',floor(tEnd_all_subjects/60),rem(tEnd_all_subjects,60))
