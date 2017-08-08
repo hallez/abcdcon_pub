@@ -119,14 +119,17 @@ all_betas_tidy <- all_betas %>%
   dplyr::mutate(roi_lbl = ifelse(roi == "brCA1_body", "CA1",
                                  ifelse(roi == "brCA2_3_DG_body", "CA23DG", roi)))
 
-#' # Plot betas, by time point
-#' ## Print what summarized values should be
+#' # Print what summarized values should be
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
-  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE))
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val)
 
-#' ## Plot
+#' # Plot
 #' ### both hemi
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
@@ -147,6 +150,28 @@ all_betas_tidy %>%
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_both-hemi.pdf"),
+                  width=8, height=6)
+}
+
+#' ### both hemi, shaded error bars
+all_betas_tidy %>%
+  dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val) %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = roi_lbl, fill = roi_lbl), alpha = 0.2) +
+  ggplot2::geom_line() +
+  ggplot2::facet_grid(.~hemi) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint")
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(graph_fpath_out,
+                                "FIR_betas_RHits_geomline_both-hemi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
 
