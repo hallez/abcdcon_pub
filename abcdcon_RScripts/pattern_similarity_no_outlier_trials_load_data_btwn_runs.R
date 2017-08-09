@@ -87,7 +87,7 @@ for(idir in c(1:length(roi_dirs))) {
       time_subj_start <- Sys.time()
 
       # define directories and filenames
-      subj_number <- getSubNum(isub)
+      subj_number <- halle::format_three_digit_subject_id(isub)
       base_roi_dir <- paste(analyzed_mri_dir,halle::ensure_trailing_slash(subj_number),halle::ensure_trailing_slash('ROIs'),sep="")
       cur_roi_dir <- paste(base_roi_dir,halle::ensure_trailing_slash(roi_dirs[idir]),sep="")
       cur_roi <- strsplit(rois[iroi],".nii")
