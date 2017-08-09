@@ -50,56 +50,108 @@ for(isub in 1:length(subjects)){
 
 #' ### Other variables (e.g., ROIs of interest)
 hemis <- c("ashs_left", "ashs_right")
-ROIs <- c("brCA1_body", "brCA2_3_DG_body")
+ROIs <- c("brCA1_body", "brCA2_3_DG_body", "brwhole_hippo")
+all_betas <- data.frame()
 
 #' # Load in data
-cur_betas_fpath <- file.path(graph_fpath_out, 'allSubj_allROI_means.mat')
-if(file.exists(cur_betas_fpath)){
-  cur_betas <- as.data.frame(R.matlab::readMat(cur_betas_fpath))
+for(isubj in 1:length(subj_formatted)){
+  cur_subj <- subj_formatted[isubj]
 
-  # --- Label `cur_betas` w/ subject IDs ---
-  # based on: https://stackoverflow.com/questions/22670541/subsetting-a-matrix-by-row-names
-  cur_ids <- cur_betas[row.names(cur_betas) == "ids", ]
-  cur_ids_fmt <- cur_ids %>%
-    tidyr::gather(colname_junk, subj_id) %>%
-    dplyr::mutate(subj_id_unlist = unlist(subj_id))
+  for(ihemi in 1:length(hemis)){
+    cur_hemi <- hemis[ihemi]
 
-  cur_betas_w_ids <- cur_betas
-  colnames(cur_betas_w_ids) <- cur_ids_fmt$subj_id_unlist
+    for(iroi in 1:length(ROIs)){
+      cur_roi <- ROIs[iroi]
 
-  # --- Flip dataframe around so have rows instead of cols ---
-  cur_betas_tidy <- cur_betas_w_ids %>%
-    dplyr::mutate(lbls = rownames(.)) %>%
-    tidyr::gather(subj_id, values, -lbls) %>%
-    # get rid of the rows for id since these are now the `subj_id` column
-    dplyr::filter(!lbls == "ids") %>%
-    # break down labels into components
-    tidyr::separate(lbls, into = c("value_type_messy", "other"), sep = "ashs") %>%
-    tidyr::separate(other, into = c("hemi_messy", "roi_messy"), sep = "br") %>%
-    # remove z-scored values b/c don't need for plots
-    dplyr::filter(!value_type_messy == "mean.abs.z.") %>%
-    # remove `.` characters that get imported from matlab
-    dplyr::mutate(hemi = gsub("\\.", "", hemi_messy),
-                  value_type = gsub("\\.", "", value_type_messy),
-                  roi = gsub("\\.", "", roi_messy))
+      cur_betas_fpath <- file.path(graph_fpath_out, sprintf('%s_%s_%s_means.mat', cur_subj, cur_hemi, cur_roi))
 
-  # --- Create separate dataframes for each subject by ROI and hemi (b/c this means each ROI will each have same length)
-  s001_left_CA1 <- cur_betas_tidy %>%
-    dplyr::filter(roi == "CA1body", subj_id == "s001", hemi == "left") %>%
-    dplyr::select(values) %>%
-    unlist()
+      if(file.exists(cur_betas_fpath)){
+        cur_betas <- as.data.frame(R.matlab::readMat(cur_betas_fpath))
 
-  # --- Plot histogram of betas, by subject, ROI, and hemi ---
-  cur_betas_tidy %>%
-    dplyr::filter(roi == "CA1body", subj_id == "s001", hemi == "left") %>%
-    dplyr::mutate(unlisted_vals = dplyr::collect(unlist(values))) %>%
-    ggplot2::ggplot(ggplot2::aes(unlist(values))) +
-    ggplot2::geom_histogram() +
-    ggplot2::facet_grid(hemi ~ subj_id)
+        # --- Add some labels to the `cur_betas` dataframe ---
+        cur_betas_tidy <- cur_betas %>%
+          dplyr::mutate(subj_id = cur_subj,
+                        hemi = cur_hemi,
+                        roi = cur_roi,
+                        voxel_id = row_number())
 
+        # --- Merge into group dataframe ---
+        if(dim(all_betas)[1]==0){
+          all_betas <- cur_betas_tidy
+        } else {
+          all_betas <- dplyr::full_join(all_betas, cur_betas_tidy, by = intersect(names(all_betas), names(cur_betas_tidy)))
+        } #dim(all_betas
+      } else {
+        print(sprintf("Current mean betas file %s does not exist. Continuing on.", cur_betas_fpath))
+        next
+      } #if(file.exists
+    } #iroi
+  } #ihemi
+} #isubj
 
+#' # Tidy up group dataframe
+#' ## Print out untiedied info
+head(all_betas)
+unique(all_betas$subj_id)
 
-  } else {
-    print(sprintf("Current mean betas file %s does not exist. Continuing on.", cur_betas_fpath))
-    next
-} #if(file.exists
+#' ## Tidy up labels
+all_betas_tidy <-
+  all_betas %>%
+  dplyr::mutate(hemi_lbl = gsub("ashs_", "", hemi),
+                roi_lbl = gsub("br","",roi))
+#' ## Peek at tidied data
+head(all_betas_tidy)
+
+#' # Plot
+#' ## Figure out range of betas to set limits
+max_val <- ceiling(max(all_betas_tidy$cur.mean, na.rm = TRUE))
+min_val <- floor(min(all_betas_tidy$cur.mean, na.rm = TRUE))
+
+#' ## Define plotting functions
+plot_hist <- function (df_in, roi_val) {
+  p <- NULL
+
+  p <<- df_in %>%
+    ggplot2::ggplot(ggplot2::aes(cur.mean)) +
+    ggplot2::geom_histogram(breaks = seq(min_val, max_val, by = 2)) +
+    ggplot2::facet_grid(subj_id ~ hemi_lbl) +
+    ggplot2::xlab("mean beta values") +
+    ggplot2::ggtitle(sprintf("Distribution of beta values for %s", roi_val)) +
+    ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
+                   strip.text.x = ggplot2::element_text(size = 15),
+                   axis.text.y = ggplot2::element_text(size = 8))
+}
+
+#' ## Plot by ROI
+for(iroi in 1:length(ROIs)){
+  cur_roi <- ROIs[iroi]
+  roi_lbl <- unique(all_betas_tidy$roi_lbl[all_betas_tidy$roi == cur_roi])
+
+  all_betas_tidy %>%
+    dplyr::filter(roi == cur_roi) %>%
+    plot_hist(., roi_lbl)
+
+  print(p)
+
+  if(SAVE_GRAPHS_FLAG == 1){
+    ggplot2::ggsave(filename = file.path(graph_fpath_out, sprintf('all_subj_mean_beta_hist_%s.pdf', cur_roi)),
+                    width = 8, height = 10)
+  }
+}
+
+#' ## Overlay distibutions for CA1 and CA23DG (body)
+all_betas_tidy %>%
+  dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body")) %>%
+  ggplot2::ggplot(ggplot2::aes(cur.mean, fill = roi_lbl)) +
+  ggplot2::geom_histogram(breaks = seq(min_val, max_val, by = 2)) +
+  ggplot2::facet_grid(subj_id ~ hemi_lbl) +
+  ggplot2::xlab("mean beta values") +
+  ggplot2::ggtitle("Distribution of beta values") +
+  ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
+                 strip.text.x = ggplot2::element_text(size = 15),
+                 axis.text.y = ggplot2::element_text(size = 8))
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(filename = file.path(graph_fpath_out, 'all_subj_mean_beta_hist-overlap_CA1body-CA23DGbody.pdf'),
+                  width = 8, height = 10)
+}
