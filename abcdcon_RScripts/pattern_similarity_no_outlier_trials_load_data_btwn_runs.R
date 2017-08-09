@@ -48,7 +48,8 @@ rois <- c("CA1.nii","CA2.nii","CA3.nii","DG.nii","ERC.nii","subiculum.nii",
           "whole_hippo_head.nii", "whole_hippo_body.nii", "whole_hippo_tail.nii", "whole_hippo_body_tail.nii")
 
 # since there are lots of `rois`, use this to speed up
-rois_of_most_interest <- c("CA1_body.nii", "CA2_3_DG_body.nii")
+rois_of_most_interest <- c("CA1_body.nii", "CA2_3_DG_body.nii",
+                           "ERC.nii", "whole_hippo.nii", "subiculum.nii")
 
 #//TODO don't hard code
 num_trials <- 63
