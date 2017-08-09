@@ -70,11 +70,32 @@ if(file.exists(cur_betas_fpath)){
   # --- Flip dataframe around so have rows instead of cols ---
   cur_betas_tidy <- cur_betas_w_ids %>%
     dplyr::mutate(lbls = rownames(.)) %>%
-    tidyr::gather(subj_id, val, -lbls) %>%
-    # FIGURE OUT HOW TO BREAK DOWN `LBLS` INTO COLUMN NAMES (e.g., eventually want to have columns like `hemi`, `roi`, `value_type`)
-    tidyr::spread(key = lbls, value = val) %>%
-    dplyr::select(-ids)
+    tidyr::gather(subj_id, values, -lbls) %>%
+    # get rid of the rows for id since these are now the `subj_id` column
+    dplyr::filter(!lbls == "ids") %>%
+    # break down labels into components
+    tidyr::separate(lbls, into = c("value_type_messy", "other"), sep = "ashs") %>%
+    tidyr::separate(other, into = c("hemi_messy", "roi_messy"), sep = "br") %>%
+    # remove z-scored values b/c don't need for plots
+    dplyr::filter(!value_type_messy == "mean.abs.z.") %>%
+    # remove `.` characters that get imported from matlab
+    dplyr::mutate(hemi = gsub("\\.", "", hemi_messy),
+                  value_type = gsub("\\.", "", value_type_messy),
+                  roi = gsub("\\.", "", roi_messy))
 
+  # --- Create separate dataframes for each subject by ROI and hemi (b/c this means each ROI will each have same length)
+  s001_left_CA1 <- cur_betas_tidy %>%
+    dplyr::filter(roi == "CA1body", subj_id == "s001", hemi == "left") %>%
+    dplyr::select(values) %>%
+    unlist()
+
+  # --- Plot histogram of betas, by subject, ROI, and hemi ---
+  cur_betas_tidy %>%
+    dplyr::filter(roi == "CA1body", subj_id == "s001", hemi == "left") %>%
+    dplyr::mutate(unlisted_vals = dplyr::collect(unlist(values))) %>%
+    ggplot2::ggplot(ggplot2::aes(unlist(values))) +
+    ggplot2::geom_histogram() +
+    ggplot2::facet_grid(hemi ~ subj_id)
 
 
 
@@ -82,9 +103,3 @@ if(file.exists(cur_betas_fpath)){
     print(sprintf("Current mean betas file %s does not exist. Continuing on.", cur_betas_fpath))
     next
 } #if(file.exists
-
-
-#' # Tidy up group dataframe
-
-#' # Plot
-
