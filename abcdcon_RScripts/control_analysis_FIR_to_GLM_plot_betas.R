@@ -220,6 +220,30 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
+#' ### just left hemi, shaded error bars
+all_betas_tidy %>%
+  dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
+  dplyr::filter(hemi == "ashs_left") %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val) %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = roi_lbl, fill = roi_lbl), alpha = 0.2) +
+  ggplot2::geom_line() +
+  ggplot2::facet_grid(.~hemi) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(graph_fpath_out,
+                                "FIR_betas_RHits_geomline_left-hemi_shaded-errorbars.pdf"),
+                  width=8, height=6)
+}
+
 #' ### just left hemi, facet by roi_lbl
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
@@ -241,23 +265,5 @@ all_betas_tidy %>%
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_left-hemi_facet-roi.pdf"),
-                  width=8, height=6)
-}
-
-#' ### geom_smooth - this looks good, but does NOT show the true mean of the data
-all_betas_tidy %>%
-  dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
-  # have to use a numeric variable so `geom_smooth` will work
-  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = mean_beta_val, color = roi_lbl)) +
-  # based on: https://stackoverflow.com/questions/26020142/adding-shade-to-r-lineplot-denotes-standard-error
-  ggplot2::geom_smooth(method="loess", se=TRUE, level = 0.95, ggplot2::aes(fill=roi_lbl), alpha=0.3) +
-  ggplot2::facet_grid(.~hemi)  +
-  ggplot2::ylab("loess fit mean beta value") +
-  ggplot2::xlab("FIR timepoint")
-
-if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
-                                "FIR_betas_RHits_geomsmooth.pdf"),
                   width=8, height=6)
 }
