@@ -233,7 +233,6 @@ all_betas_tidy %>%
   ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
   ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = roi_lbl, fill = roi_lbl), alpha = 0.2) +
   ggplot2::geom_line() +
-  ggplot2::facet_grid(.~hemi) +
   ggplot2::ylab("mean beta value") +
   ggplot2::xlab("FIR timepoint") +
   ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
