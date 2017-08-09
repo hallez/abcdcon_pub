@@ -136,7 +136,7 @@ for isub = 1:num_subjs
               
               % save out in way that's easier to read into R
               cur_mean = mean(rois.(['mean_',cur_roi_name]),2);
-              save(fullfile(plots-dir, sprintf('%s_%s_means.mat', b.curSubj, cur_roi_name)), 'cur_mean')
+              save(fullfile(plots_dir, sprintf('%s_%s_means.mat', b.curSubj, cur_roi_name)), 'cur_mean')
               clear cur_mean
            end
         end
