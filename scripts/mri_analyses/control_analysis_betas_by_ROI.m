@@ -8,7 +8,7 @@ num_subjs = length(subjects);
 % setup flags
 SAVE_OUT_FLAG = 1;
 GRAPH_FLAG = 0;
-GRAPH_GROUP_FLAG = 1;
+GRAPH_GROUP_FLAG = 0;
 ROIS_FLAG = 1;
 
 % roi variables
@@ -132,7 +132,12 @@ for isub = 1:num_subjs
               % again, take mean across runs dimension
               all_subj_rois(isub).(['mean_',cur_roi_name])(:,1) = mean(rois.(['mean_',cur_roi_name]),2); 
               all_subj_rois(isub).(['mean_abs_z_',cur_roi_name])(:,1) = mean(rois.(['mean_abs_z_',cur_roi_name]),2);
-              all_subj_rois(isub).ids(:,1) = {b.curSubj}; 
+              all_subj_rois(isub).ids(:,1) = {b.curSubj};
+              
+              % save out in way that's easier to read into R
+              cur_mean = mean(rois.(['mean_',cur_roi_name]),2);
+              save(fullfile(plots-dir, sprintf('%s_%s_means.mat', b.curSubj, cur_roi_name)), 'cur_mean')
+              clear cur_mean
            end
         end
     end
