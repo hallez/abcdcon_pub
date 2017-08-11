@@ -57,5 +57,5 @@ all_chisq %>%
   # draw a line at p = 0.05 for Chisq df =2 (from https://www.medcalc.org/manual/chi-square-table.php)
   ggplot2::geom_vline(xintercept = 5.991, color = "red")
 
-ggplot2::ggsave(file.path(graph_fpath_out, sprintf("control_analysis_trial_nums_chisq_dist_%s.pdf", num_reps)),
+ggplot2::ggsave(file.path(graph_fpath_out, "matched-trial-nums", sprintf("control_analysis_trial_nums_chisq_dist_%s.pdf", num_reps)),
                 width = 6, height = 4)
