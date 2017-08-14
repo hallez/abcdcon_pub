@@ -33,13 +33,17 @@ analyzed_mri_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$direc
 raw_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$raw_behavioral))
 analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_behavioral))
 dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
-graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
+dropbox_graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
                           halle::ensure_trailing_slash("writeups"),
                           halle::ensure_trailing_slash("figures"))
+graph_fpath_out <- paste0(dropbox_graph_fpath_out, "RT-PS_correlation")
+dir.create(graph_fpath_out) # will throw an error if this already exists
 
 #' ## Setup other variables
-#' ### Flags
+rois_of_interest <- c("CA1_body", "CA2_3_DG_body")
+GRAPH_FLAG <- 1
 SAVE_GRAPHS_FLAG <-1
+MODEL_FLAG <- 1
 
 #' # Load in PS data
 load(file.path(analyzed_mri_dir, 'group_z_renamed_spatial_temporal_PS_by_trial.RData'))
@@ -49,6 +53,11 @@ head(all_trials_z_better_names)
 unique(all_trials_z_better_names$roi)
 unique(all_trials_z_better_names$condition)
 unique(all_trials_z_better_names$subj)
+
+#' ## Setup conditions of interest
+conditions_of_no_interest <- "anyVideo_sameHouse"
+conditions_of_interest <- unique(all_trials_z_better_names$condition)
+conditions_of_interest <- conditions_of_interest[conditions_of_interest != conditions_of_no_interest]
 
 #' ## Split out trials from trial pairs so can merge w/ behavioral data
 PS_trial_ids <- all_trials_z_better_names %>%
@@ -96,12 +105,15 @@ alldat <- dplyr::left_join(PS_trial_ids, behav_trim, by = c("subj", "row.runID_t
   # compute RT difference for each trial pair
   dplyr::mutate(RT_diff = MemRT_row - MemRT_col)
 
+#' ## Peek at merged data
+head(alldat)
+
 #' ## Sanity spot check RTs
 #' ### Rows
 alldat %>%
   dplyr::filter(row.runID_trialID == "Run02_Trial010",
                 hemi == "left",
-                roi == "CA1",
+                roi == "CA1_body",
                 subj == "s006") %>%
   dplyr::distinct(MemRT_row)
 
@@ -114,7 +126,7 @@ behav_trim %>%
 alldat %>%
   dplyr::filter(col.runID_trialID == "Run04_Trial038",
                 hemi == "left",
-                roi == "CA1",
+                roi == "CA1_body",
                 subj == "s006") %>%
   dplyr::distinct(MemRT_col)
 
@@ -147,34 +159,178 @@ scatter_cond_facet_by_subj <- function(dat_in){
 }
 
 #' ## Plot each condition
-# TODO: Create a for loop and autogenerate filenames
-alldat %>%
-  dplyr::filter(hemi == "left",
-                roi == "CA1",
-                condition == "sameVideo_sameHouse") %>%
-  scatter_cond()
+# limit this to left hemi since this is where we find sigificant effects
+if(GRAPH_FLAG == 1) {
+  for(iroi in 1:length(rois_of_interest)){
+    for(icond in 1:length(conditions_of_interest)){
+      cur_roi <- rois_of_interest[iroi]
+      cur_cond <- conditions_of_interest[icond]
 
-print(p)
+      # --- plot all subjects together ---
+      alldat %>%
+        dplyr::filter(hemi == "left",
+                      roi == cur_roi,
+                      condition == cur_cond) %>%
+        scatter_cond()
+      p <- p +
+        ggplot2::ggtitle(sprintf("%s: %s", cur_roi, cur_cond)) +
+        ggplot2::xlab("trial pair correlation value (r)") +
+        ggplot2::ylab("trial pair RT difference (in ms)")
+      print(p)
 
-if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
-                                "RT-PS_correlation_sameVideo_sameHouse.pdf"),
-                  width=8, height=6)
-}
+      if(SAVE_GRAPHS_FLAG == 1){
+        ggplot2::ggsave(file = file.path(graph_fpath_out,
+                                         sprintf("RT-PS_correlation_%s_%s.pdf", cur_roi, cur_cond)),
+                        width=8, height=6)
+      }
 
-alldat %>%
-  dplyr::filter(hemi == "left",
-                roi == "CA1",
-                condition == "sameVideo_sameHouse") %>%
-  scatter_cond_facet_by_subj()
+      # --- plot faceting by subject ---
+      alldat %>%
+        dplyr::filter(hemi == "left",
+                      roi == cur_roi,
+                      condition == cur_cond) %>%
+        scatter_cond_facet_by_subj()
+      p <- p +
+        ggplot2::ggtitle(sprintf("%s: %s \n by subject ", cur_roi, cur_cond)) +
+        ggplot2::xlab("trial pair correlation value (r)") +
+        ggplot2::ylab("trial pair RT difference (in ms)") +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6))
+      print(p)
 
-print(p)
+      if(SAVE_GRAPHS_FLAG == 1){
+        ggplot2::ggsave(file = file.path(graph_fpath_out,
+                                         sprintf("RT-PS_correlation_%s_%s_bySubj.pdf", cur_roi, cur_cond)),
+                        width=8, height=6)
+      }
+    } #icond
+  } #iroi
+} # GRAPH_FLAG
 
-if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
-                                "RT-PS_correlation_sameVideo_sameHouse_bySubj.pdf"),
-                  width=8, height=6)
-}
+#' # Re-model including RT
+if(MODEL_FLAG == 1) {
+  #' ## Setup dataframe
+  all_trials_body <-
+    alldat %>%
+    dplyr::filter(roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
+    droplevels(.)
 
+  head(all_trials_body)
+  unique(all_trials_body$roi)
 
+  #' ## filter so just have conditions of interest
+  all_trials_body_SVSH_DVSH_DVDH <- NULL
+  all_trials_body_SVSH_DVSH_DVDH <-
+    all_trials_body %>%
+    dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse", "diffVideo_diffHouse"))
+  head(all_trials_body_SVSH_DVSH_DVDH)
+  unique(all_trials_body_SVSH_DVSH_DVDH$condition)
+  unique(all_trials_body_SVSH_DVSH_DVDH$hemi)
+  unique(all_trials_body_SVSH_DVSH_DVDH$roi)
 
+  #' ### main effects w/o random slopes
+  lmm.all_cond_roi_hemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|RT_diff) + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH, REML = FALSE)
+  summary(lmm.all_cond_roi_hemi.no_random_slopes)
+
+  #' ### 3-way interaction w/o random slopes
+  lmm.all_condXroiXhemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi*hemi + (1|RT_diff) + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH, REML = FALSE)
+  summary(lmm.all_condXroiXhemi.no_random_slopes)
+
+  #' #### Model comparisons (ROI x Context Similarity x Hemisphere)
+  print(cat("\nModel comparisons (ROI x Context Similarity x Hemisphere) including (1|RT_diff)"))
+  print(anova(lmm.all_cond_roi_hemi.no_random_slopes, lmm.all_condXroiXhemi.no_random_slopes))
+
+  #' # Left hemi only
+  all_trials_body_SVSH_DVSH_DVDH_left <-
+    all_trials_body_SVSH_DVSH_DVDH %>%
+    dplyr::filter(hemi == "left")
+
+  lmm.all_cond_roi.left <- lme4::lmer(z_r ~ condition + roi + (1|RT_diff) + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_left, REML = FALSE)
+  summary(lmm.all_cond_roi.left)
+
+  lmm.all_condXroi.left <- lme4::lmer(z_r ~ condition*roi + (1|RT_diff) + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_left, REML=FALSE)
+  summary(lmm.all_condXroi.left)
+
+  #' ## model comparisons (Left Hemi: ROI x Context Similarity)
+  print(cat("\nModel comparisons (Left Hemi: ROI x Context Similarity) including (1|RT_diff)"))
+  print(anova(lmm.all_cond_roi.left, lmm.all_condXroi.left))
+
+  #' # Test for interactions between conditions - Episodic Context Similarity
+  #' ## Print out what's in dataframe before start running stats
+  # yes, this is redundant with when the dataframe gets setup
+  # but better to be redundant and ensure you know what you're working with!
+  all_trials_body_temporal <- NULL
+  all_trials_body_temporal <-
+    all_trials_body %>%
+    dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+  head(all_trials_body_temporal)
+  unique(all_trials_body_temporal$condition)
+  unique(all_trials_body_temporal$hemi)
+  unique(all_trials_body_temporal$roi)
+
+  #' ## Model setup: Left
+  # Now, we need to follow up the significant 3-way interaction in left hemi
+  temporal_lmm_left <-
+    all_trials_body_temporal %>%
+    dplyr::filter(hemi == "left")
+
+  # print out what's in the dataframe so we're supersure before running stats
+  head(temporal_lmm_left)
+  unique(temporal_lmm_left$condition)
+  unique(temporal_lmm_left$roi)
+  unique(temporal_lmm_left$hemi)
+
+  # condition, roi
+  lmm.ss2 <- lme4::lmer(z_r ~ condition + roi + (1|RT_diff) + (1|subj), data = temporal_lmm_left, REML = FALSE)
+  summary(lmm.ss2)
+
+  # condition * roi
+  lmm.ss3 <- lme4::lmer(z_r ~ condition*roi + (1|RT_diff) + (1|subj), data = temporal_lmm_left, REML=FALSE)
+  summary(lmm.ss3)
+
+  #' ### Compare models (left CA1 x left CA23DG: Episodic Context Similarity)
+  # roi and condition vs. roi*condition
+  # this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
+  print(cat("\nCompare models (left CA1 x left CA23DG: Episodic Context Similarity) including (1|RT_diff)"))
+  print(anova(lmm.ss2, lmm.ss3))
+
+  #' # Test for interactions between conditions - Spatial Context Similarity
+  #' ## Print out what's in dataframe before start running stats
+  # yes, this is redundant with when the dataframe gets setup
+  # but better to be redundant and ensure you know what you're working with!
+  all_trials_body_spatial <- NULL
+  all_trials_body_spatial <-
+    all_trials_body %>%
+    dplyr::filter(roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
+    dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+  head(all_trials_body_spatial)
+  unique(all_trials_body_spatial$condition)
+  unique(all_trials_body_spatial$hemi)
+  unique(all_trials_body_spatial$roi)
+
+  #' ## Model setup: Left
+  # Now, we need to follow up the significant 3-way interaction in left hemi
+  spatial_lmm_left <-
+    all_trials_body_spatial %>%
+    dplyr::filter(hemi == "left")
+
+  # print out what's in the dataframe so we're supersure before running stats
+  head(spatial_lmm_left)
+  unique(spatial_lmm_left$condition)
+  unique(spatial_lmm_left$roi)
+  unique(spatial_lmm_left$hemi)
+
+  # condition, roi
+  lmm.ss2 <- lme4::lmer(z_r ~ condition + roi + (1|RT_diff) + (1|subj), data = spatial_lmm_left, REML = FALSE)
+  summary(lmm.ss2)
+
+  # condition * roi
+  lmm.ss3 <- lme4::lmer(z_r ~ condition*roi + (1|RT_diff) +(1|subj), data = spatial_lmm_left, REML=FALSE)
+  summary(lmm.ss3)
+
+  #' ### Compare models (left CA1 x left CA23DG: Spatial Context Similarity)
+  # roi and condition vs. roi*condition
+  # this is the most comparable analysis to the condition x roi x hemi interaction model we're trying to breakdown
+  print(cat("\nCompare models (left CA1 x left CA23DG: Spatial Context Similarity) (1|RT_diff)"))
+  print(anova(lmm.ss2, lmm.ss3))
+
+} #MODEL_FLAG
