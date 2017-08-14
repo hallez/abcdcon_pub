@@ -51,6 +51,7 @@ for(isub in 1:length(subjects)){
 #' ### Other variables (e.g., ROIs of interest)
 hemis <- c("ashs_left", "ashs_right")
 ROIs <- c("brCA1_body", "brCA2_3_DG_body")
+model_name <- "byMemoryFHitMiss"
 all_betas <- data.frame()
 
 #' # Load in data across hemis, ROIs, and subjects
@@ -63,8 +64,8 @@ for(ihemi in 1:length(hemis)){
     for(isubj in 1:length(subj_formatted)){
       cur_subj <- subj_formatted[isubj]
 
-      cur_betas_fpath <- file.path(analyzed_mri_dir, cur_subj, 'ROIs', cur_hemi, sprintf('%s_FIR_beta_nan_means_all_runs.mat', cur_roi))
-      cur_ids_fpath <- file.path(analyzed_mri_dir, cur_subj, 'ROIs', cur_hemi, sprintf('%s_FIR_beta_ids_all_runs.mat', cur_roi))
+      cur_betas_fpath <- file.path(analyzed_mri_dir, cur_subj, 'ROIs', cur_hemi, sprintf('%s_%s_FIR_beta_nan_means_all_runs.mat', cur_roi, model_name))
+      cur_ids_fpath <- file.path(analyzed_mri_dir, cur_subj, 'ROIs', cur_hemi, sprintf('%s_%s_FIR_beta_ids_all_runs.mat', cur_roi, model_name))
       if(file.exists(cur_betas_fpath)){
         cur_betas <- as.data.frame(R.matlab::readMat(cur_betas_fpath))
         cur_ids <- as.data.frame(R.matlab::readMat(cur_ids_fpath))
@@ -107,7 +108,7 @@ all_betas_tidy <- all_betas %>%
   dplyr::mutate(beta_number = as.numeric(beta_number_bare)) %>%
   dplyr::mutate(beta_fact = as.factor(beta_number)) %>%
   # filter out regressors for motion, etc.
-  dplyr::filter(regressor_name %in% c("RHit", "FHit", "FA", "CR", "Miss")) %>%
+  dplyr::filter(regressor_name %in% c("RHit", "FHitsAndMisses", "FA", "CR")) %>% #NB: currently won't work for both FIR models (FHit, Miss vs FHitsANDMisses)
   # ensure that trials are in order (b/c sequencing betas assumes this)
   dplyr::arrange(subj_id, hemi, roi, run_number, beta_ID) %>%
   # based on https://stackoverflow.com/questions/30793033/r-add-columns-indicating-start-and-end-for-a-sequence-within-columns (see setup in question post)
@@ -264,5 +265,27 @@ all_betas_tidy %>%
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_left-hemi_facet-roi.pdf"),
+                  width=8, height=6)
+}
+
+#' ### R, F, Miss: both hemi, shaded error bars
+all_betas_tidy %>%
+  dplyr::filter(regressor_name %in% c("RHit", "FHit", "Miss")) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val) %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = regressor_name)) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = regressor_name, fill = regressor_name), alpha = 0.2) +
+  ggplot2::geom_line() +
+  ggplot2::facet_grid(roi_lbl~hemi) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint")
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(graph_fpath_out,
+                                "FIR_betas_RHitsVSFhitsMiss_geomline_both-hemi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
