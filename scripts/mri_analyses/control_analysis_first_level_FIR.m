@@ -7,8 +7,34 @@ function [] = control_analysis_first_level_FIR()
 
 initialize_ABCDCon
 curdir = pwd;
-outLabel = 'firstlevel_byMemory';
-b.replace_cons = 0;
+
+%%%MODEL DEFINITIONS 
+allModels(1).name = 'byMemory_model';
+allModels(1).type = 'univariate_FIR';
+
+allModels(2).name = 'byMemoryFHitMiss_model';
+allModels(2).type = 'univariate_FIR';
+
+% enable selecting to analyze different models
+modelSelect = 0;
+for imodel=1:size(allModels,2)
+    curModel = allModels(imodel).name;
+    b.curModel = curModel; % this is needed to feed into SPM batch
+    curModelBase = strtok(curModel,'_');
+    curModelType = allModels(imodel).type;
+    outLabel = sprintf('firstlevel_%s', curModelBase);
+    modelSelect = input(['Do you want to analyze ' curModel '? (Y=1,N=0): ']);
+    if modelSelect
+        break;
+    end %if modelSelect
+end %imodel=
+fprintf('Selected to analyze %s\n',curModel)
+
+outputDir = [analMRIDir curModelType '_' curModelBase filesep];
+if ~isdir(outputDir)
+    fprintf('Creating model directory: %s\n',curModel)
+    mkdir(outputDir)
+end %if isdir(
 
 %%
 for isub=1:length(subjects)
@@ -19,9 +45,8 @@ for isub=1:length(subjects)
     b.curSubj = ['s' num2str(subjects(isub),'%03d')];
     b.dataDir = [analMRIDir,b.curSubj,'/'];
     b.analMRIDir = analMRIDir;
-    b.analysisName = 'byMemory_model_';
-    b.modelDir = [analMRIDir,'univariate_FIR_byMemory'];
-    b.cons = '_cons.mat';
+    b.analysisName = sprintf('%s_model_', curModelBase);
+    b.modelDir = [analMRIDir, sprintf('%s_%s', curModelType, curModelBase)];
 
     % Run exceptions for subject-specific naming conventions
     b = run_exceptions_ABCDCon(b);
@@ -101,7 +126,7 @@ function [matlabbatch]=batch_job(b)
     matlabbatch{9}.spm.stats.fmri_spec.sess(1).scans(1).src_exbranch = substruct('.','val', '{}',{1}, '.','val', '{}',{1});
     matlabbatch{9}.spm.stats.fmri_spec.sess(1).scans(1).src_output = substruct('.','files');
     matlabbatch{9}.spm.stats.fmri_spec.sess(1).cond = struct('name', {}, 'onset', {}, 'duration', {}, 'tmod', {}, 'pmod', {});
-    matlabbatch{9}.spm.stats.fmri_spec.sess(1).multi = {[b.modelDir,'/',b.curSubj,'/byMemory_model_',b.curSubj,'_run1_regs.mat']};
+    matlabbatch{9}.spm.stats.fmri_spec.sess(1).multi = {fullfile(b.modelDir,b.curSubj, sprintf('%s_%s_run1_regs.mat',b.curModel, b.curSubj))};
     matlabbatch{9}.spm.stats.fmri_spec.sess(1).regress = struct('name', {}, 'val', {});
     matlabbatch{9}.spm.stats.fmri_spec.sess(1).multi_reg(1) = cfg_dep;
     matlabbatch{9}.spm.stats.fmri_spec.sess(1).multi_reg(1).tname = 'Multiple regressors';
@@ -123,7 +148,7 @@ function [matlabbatch]=batch_job(b)
     matlabbatch{9}.spm.stats.fmri_spec.sess(2).scans(1).src_exbranch = substruct('.','val', '{}',{2}, '.','val', '{}',{1});
     matlabbatch{9}.spm.stats.fmri_spec.sess(2).scans(1).src_output = substruct('.','files');
     matlabbatch{9}.spm.stats.fmri_spec.sess(2).cond = struct('name', {}, 'onset', {}, 'duration', {}, 'tmod', {}, 'pmod', {});
-    matlabbatch{9}.spm.stats.fmri_spec.sess(2).multi = {[b.modelDir,'/',b.curSubj,'/byMemory_model_',b.curSubj,'_run2_regs.mat']};
+    matlabbatch{9}.spm.stats.fmri_spec.sess(2).multi = {fullfile(b.modelDir,b.curSubj, sprintf('%s_%s_run2_regs.mat',b.curModel, b.curSubj))};
     matlabbatch{9}.spm.stats.fmri_spec.sess(2).regress = struct('name', {}, 'val', {});
     matlabbatch{9}.spm.stats.fmri_spec.sess(2).multi_reg(1) = cfg_dep;
     matlabbatch{9}.spm.stats.fmri_spec.sess(2).multi_reg(1).tname = 'Multiple regressors';
@@ -145,7 +170,7 @@ function [matlabbatch]=batch_job(b)
     matlabbatch{9}.spm.stats.fmri_spec.sess(3).scans(1).src_exbranch = substruct('.','val', '{}',{3}, '.','val', '{}',{1});
     matlabbatch{9}.spm.stats.fmri_spec.sess(3).scans(1).src_output = substruct('.','files');
     matlabbatch{9}.spm.stats.fmri_spec.sess(3).cond = struct('name', {}, 'onset', {}, 'duration', {}, 'tmod', {}, 'pmod', {});
-    matlabbatch{9}.spm.stats.fmri_spec.sess(3).multi = {[b.modelDir,'/',b.curSubj,'/byMemory_model_',b.curSubj,'_run3_regs.mat']};
+    matlabbatch{9}.spm.stats.fmri_spec.sess(3).multi = {fullfile(b.modelDir,b.curSubj, sprintf('%s_%s_run3_regs.mat',b.curModel, b.curSubj))};
     matlabbatch{9}.spm.stats.fmri_spec.sess(3).regress = struct('name', {}, 'val', {});
     matlabbatch{9}.spm.stats.fmri_spec.sess(3).multi_reg(1) = cfg_dep;
     matlabbatch{9}.spm.stats.fmri_spec.sess(3).multi_reg(1).tname = 'Multiple regressors';
@@ -167,7 +192,7 @@ function [matlabbatch]=batch_job(b)
     matlabbatch{9}.spm.stats.fmri_spec.sess(4).scans(1).src_exbranch = substruct('.','val', '{}',{4}, '.','val', '{}',{1});
     matlabbatch{9}.spm.stats.fmri_spec.sess(4).scans(1).src_output = substruct('.','files');
     matlabbatch{9}.spm.stats.fmri_spec.sess(4).cond = struct('name', {}, 'onset', {}, 'duration', {}, 'tmod', {}, 'pmod', {});
-    matlabbatch{9}.spm.stats.fmri_spec.sess(4).multi = {[b.modelDir,'/',b.curSubj,'/byMemory_model_',b.curSubj,'_run4_regs.mat']};
+    matlabbatch{9}.spm.stats.fmri_spec.sess(4).multi = {fullfile(b.modelDir,b.curSubj, sprintf('%s_%s_run4_regs.mat',b.curModel, b.curSubj))};
     matlabbatch{9}.spm.stats.fmri_spec.sess(4).regress = struct('name', {}, 'val', {});
     matlabbatch{9}.spm.stats.fmri_spec.sess(4).multi_reg(1) = cfg_dep;
     matlabbatch{9}.spm.stats.fmri_spec.sess(4).multi_reg(1).tname = 'Multiple regressors';
@@ -200,40 +225,3 @@ function [matlabbatch]=batch_job(b)
     matlabbatch{10}.spm.stats.fmri_est.spmmat(1).src_output = substruct('.','spmmat');
     matlabbatch{10}.spm.stats.fmri_est.method.Classical = 1;
 end %function [matlabbatch]
-
-
-%%%%CONTRAST FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [] = batch_contrasts(b)
-%This function evaluates a set of previously-defined t-contrasts. Adapted
-%from fmri_contrasts_b (Ken Roberts, Duke Univ, CCN)
-
-%load SPM
-load(strcat(b.modelDir,filesep,b.curSubj,filesep,'SPM.mat'));
-
-%create xCon structures for each con
-% what is the range of this batch of contrasts?
-if ~isempty(SPM.xCon) && b.replace_cons~=1
-    num_existing_cons = length(SPM.xCon); %can modify this to overwrite
-else
-    num_existing_cons = 0;
-    SPM.xCon = struct( 'name',{{'init'}}, 'STAT', [1], 'c', [1], 'X0', [1], ...
-        'iX0', {{'init'}}, 'X1o', [1], 'eidf', [], 'Vcon', [],  'Vspm', [] );
-end;
-
-%load in contrast vectors and names
-load(strcat(b.modelDir,filesep,b.curSubj,filesep,b.analysisName,b.curSubj,b.cons));
-num_cons_tocalc = length(contrast_vectors);
-sessionmeans = zeros(1,length(b.runs)); % this right-pads to account for number of runs for run means to ensure that contrast vector is same length as design matrix. 
-
-%update xCon structures
-for iCon = 1:num_cons_tocalc
-    SPM.xCon(iCon + num_existing_cons) = spm_FcUtil('Set', contrastNames{iCon}, ...
-        'T', 'c', transpose([contrast_vectors{iCon} sessionmeans]), SPM.xX.xKXs);
-end;
-
-%evaluate contrasts
-Ci = num_existing_cons+1:(num_existing_cons + num_cons_tocalc);
-spm_contrasts(SPM, Ci);
-
-end
