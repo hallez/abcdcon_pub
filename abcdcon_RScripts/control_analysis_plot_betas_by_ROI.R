@@ -102,6 +102,35 @@ all_betas_tidy <-
 #' ## Peek at tidied data
 head(all_betas_tidy)
 
+#' # Test whether mean beta value differs by ROI
+#' ## Mean
+mean_betas <- all_betas_tidy %>%
+  dplyr::group_by(subj_id, roi) %>%
+  dplyr::summarise(mean_val = mean(cur.mean, na.rm = TRUE)) %>%
+  tidyr::spread(key = roi, value = mean_val)
+
+t.test(mean_betas$brCA1_body, mean_betas$brCA2_3_DG_body, paired = TRUE)
+
+mean_betas %>%
+  dplyr::ungroup() %>%
+  dplyr::rename(var1 = brCA1_body, var2 = brCA2_3_DG_body) %>%
+  dplyr::select(var1, var2) %>%
+  halle::compute_cohens_d()
+
+#' ## Median
+median_betas <- all_betas_tidy %>%
+  dplyr::group_by(subj_id, roi) %>%
+  dplyr::summarise(median_val = median(cur.mean, na.rm = TRUE)) %>%
+  tidyr::spread(key = roi, value = median_val)
+
+t.test(median_betas$brCA1_body, median_betas$brCA2_3_DG_body, paired = TRUE)
+
+median_betas %>%
+  dplyr::ungroup() %>%
+  dplyr::rename(var1 = brCA1_body, var2 = brCA2_3_DG_body) %>%
+  dplyr::select(var1, var2) %>%
+  halle::compute_cohens_d()
+
 #' # Plot
 #' ## Figure out range of betas to set limits
 max_val <- ceiling(max(all_betas_tidy$cur.mean, na.rm = TRUE))
