@@ -338,6 +338,28 @@ o$byMemory_key <- car::recode(factor(data$trialTypeKey),c("'BrownRm1_RHit_HCRC'=
                                                              'FA_R'='FA';'FA_F'='FA'"))
 levels(o$byMemory_key)
 
+#' ## Model just by memory, combining Fhits & Misses, ignoring all contexts
+# This should include RHits, FhitsANDMisses, CR, FA, and ExcludeTrials
+o$byMemoryFHitMiss_model <- car::recode(factor(data$trialTypeKey),c("'BrownRm1_RHit_HCRC'=1;'BrownRm2_RHit_HCRC'=1;'BrownRm2_RHit_HCRI'=1;'BrownRm1_RHit_HCRI'=1;'Brown_RHit_HI'=1;
+                                                                    'GrayRm1_RHit_HCRC'=1;'GrayRm2_RHit_HCRC'=1;'GrayRm2_RHit_HCRI'=1;'GrayRm1_RHit_HCRI'=1;'Gray_RHit_HI'=1;
+                                                                    'BrownRm1_FHit_HCRC'=2;'BrownRm2_FHit_HCRC'=2;'BrownRm1_FHit_HCRI'=2;'BrownRm2_FHit_HCRI'=2;'Brown_FHit_HI'=2;
+                                                                    'GrayRm1_FHit_HCRC'=2;'GrayRm2_FHit_HCRC'=2;'GrayRm1_FHit_HCRI'=2;'GrayRm2_FHit_HCRI'=2;'Gray_FHit_HI' =2;
+                                                                    'Miss'=2;
+                                                                    'CR'=3;
+                                                                    'FA_R'=4;'FA_F'=4;
+                                                                    'ExcludeTrial'=99"))
+#' ### Revalue "key" for regressors in memory model
+# no need to recode misses or excluded trials b/c they already have the correct labels
+o$byMemoryFHitMiss_key <- car::recode(factor(data$trialTypeKey),c("'BrownRm1_RHit_HCRC'='RHit';'BrownRm2_RHit_HCRC'='RHit';'BrownRm2_RHit_HCRI'='RHit';'BrownRm1_RHit_HCRI'='RHit';'RHit_HI'='RHit';'Brown_RHit_HI'='RHit';
+                                                                  'GrayRm1_RHit_HCRC'='RHit';'GrayRm2_RHit_HCRC'='RHit';'GrayRm2_RHit_HCRI'='RHit';'GrayRm1_RHit_HCRI'='RHit';'RHit_HI'='RHit';'Gray_RHit_HI'='RHit';
+                                                                  'BrownRm1_FHit_HCRC'='FHitsANDMisses';'BrownRm2_FHit_HCRC'='FHitsANDMisses';'BrownRm1_FHit_HCRI'='FHitsANDMisses';'BrownRm2_FHit_HCRI'='FHitsANDMisses';'Brown_FHit_HI'='FHitsANDMisses';
+                                                                  'GrayRm1_FHit_HCRC'='FHitsANDMisses';'GrayRm2_FHit_HCRC'='FHitsANDMisses';'GrayRm1_FHit_HCRI'='FHitsANDMisses';'GrayRm2_FHit_HCRI'='FHitsANDMisses';'Gray_FHit_HI' ='FHitsANDMisses';
+                                                                  'FA_R'='FA';'FA_F'='FA'"))
+o$byMemoryFHitMiss_key[data$trialTypeKey=="Miss"] <- "FHitsANDMisses"
+# eliminate "Miss" from being counted as a level
+o$byMemoryFHitMiss_key <- droplevels(o$byMemoryFHitMiss_key)
+levels(o$byMemoryFHitMiss_key)
+
 #' # Save out
 #' ## Onsets
 # fix formatting so plays nicely when save out
