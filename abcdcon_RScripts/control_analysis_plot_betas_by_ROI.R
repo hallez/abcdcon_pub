@@ -184,3 +184,42 @@ if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(filename = file.path(graph_fpath_out, 'all_subj_mean_beta_hist-overlap_CA1body-CA23DGbody.pdf'),
                   width = 8, height = 10)
 }
+
+#' # Plot normalizing for the number of voxels
+# w/ a single ROI, this will scale to 1
+all_betas_tidy %>%
+  dplyr::filter(roi == "brCA1_body") %>%
+  ggplot2::ggplot(ggplot2::aes(cur.mean, fill = roi_lbl)) +
+  ggplot2::geom_histogram(ggplot2::aes(y = ..ncount..), breaks = seq(min_val, max_val, by = 2)) +
+  ggplot2::facet_grid(subj_id ~ hemi_lbl) +
+  ggplot2::xlab("mean beta values") +
+  ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
+                 strip.text.x = ggplot2::element_text(size = 15),
+                 axis.text.y = ggplot2::element_text(size = 8))
+
+# w/ 2 ROIs, this scales to 2
+all_betas_tidy %>%
+  dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body")) %>%
+  ggplot2::ggplot(ggplot2::aes(cur.mean, fill = roi_lbl)) +
+  ggplot2::geom_histogram(ggplot2::aes(y = ..ncount..), breaks = seq(min_val, max_val, by = 2)) +
+  ggplot2::facet_grid(subj_id ~ hemi_lbl) +
+  ggplot2::xlab("mean beta values") +
+  ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
+                 strip.text.x = ggplot2::element_text(size = 15),
+                 axis.text.y = ggplot2::element_text(size = 8))
+
+# need to use `..density..` to get it to scale for each group (but then y-axis isn't out of 1)
+all_betas_tidy %>%
+  dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body")) %>%
+  # normalized yaxis based on: https://stackoverflow.com/questions/11766856/normalizing-y-axis-in-histograms-in-r-ggplot-to-proportion
+  # use `..density..` b/c then it's normalized by group (see: https://stackoverflow.com/questions/22181132/normalizing-y-axis-in-histograms-in-r-ggplot-to-proportion-by-group)
+  # need to scale by `binwidth` b/c this will scale it appropriately
+  ggplot2::ggplot(ggplot2::aes(x = cur.mean, fill = roi_lbl)) +
+  ggplot2::geom_histogram(ggplot2::aes(y = 2*..density..), breaks = seq(min_val, max_val, by = 2), binwidth = 2) +
+  ggplot2::facet_grid(subj_id ~ hemi_lbl) +
+  ggplot2::xlab("mean beta values") +
+  ggplot2::ylab("density") +
+  ggplot2::ggtitle("Distribution of beta values") +
+  ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
+                 strip.text.x = ggplot2::element_text(size = 15),
+                 axis.text.y = ggplot2::element_text(size = 8))
