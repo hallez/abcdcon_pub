@@ -9,6 +9,28 @@ roi_dirs = {'ashs_left','ashs_right'};
 b.all_ROIs = {'brCA1_body', 'brCA2_3_DG_body'};
 FIR_order = 10; % this is a parameter that's set in `control_analysis_first_level_FIR.m`
 
+%%%MODEL DEFINITIONS 
+allModels(1).name = 'byMemory_model';
+allModels(1).type = 'univariate_FIR';
+
+allModels(2).name = 'byMemoryFHitMiss_model';
+allModels(2).type = 'univariate_FIR';
+
+% enable selecting to analyze different models
+modelSelect = 0;
+for imodel=1:size(allModels,2)
+    curModel = allModels(imodel).name;
+    b.curModel = curModel; % this is needed to feed into SPM batch
+    curModelBase = strtok(curModel,'_');
+    curModelType = allModels(imodel).type;
+    outLabel = sprintf('firstlevel_%s', curModelBase);
+    modelSelect = input(['Do you want to analyze ' curModel '? (Y=1,N=0): ']);
+    if modelSelect
+        break;
+    end %if modelSelect
+end %imodel=
+fprintf('Selected to analyze %s\n',curModel)
+
 %% Loop across subjects 
 for isub=1:length(subjects)
 
@@ -17,7 +39,7 @@ for isub=1:length(subjects)
 
     b.curSubj = ['s' num2str(subjects(isub),'%03d')];
     b.analMRIDir = analMRIDir;
-    b.modelDir = [analMRIDir,'univariate_FIR_byMemory'];
+    b.modelDir = [analMRIDir, sprintf('%s_%s', curModelType, curModelBase)];
     % if last subject overwrote b.runs, revert back 
     runbase = 'run';
     runnums = 1:4;
@@ -77,10 +99,10 @@ for isub=1:length(subjects)
                 beta_means_all_runs = nanmean(cur_betas);
                 
                 % save out the nan-means for all trials across all runs
-                fname_beta_means_out = cellstr([b.cur_ROI_dir, filesep, roi_name, '_FIR_beta_nan_means_all_runs']);
+                fname_beta_means_out = cellstr([b.cur_ROI_dir, filesep, sprintf('%s_%s_FIR_beta_nan_means_all_runs', roi_name, curModelBase)]);
                 save(fname_beta_means_out{:},'beta_means_all_runs')
                 
-                fname_ids_out = cellstr([b.cur_ROI_dir,filesep,roi_name,'_FIR_beta_ids_all_runs']);
+                fname_ids_out = cellstr([b.cur_ROI_dir,filesep,sprintf('%s_%s_FIR_beta_ids_all_runs', roi_name, curModelBase)]);
                 save(fname_ids_out{:},'beta_ids')
             end %if size(cur_betas,1) > 0
 
