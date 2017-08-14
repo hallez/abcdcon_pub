@@ -25,6 +25,11 @@ allModels(2).type = 'univariate_FIR';
 allModels(2).contrasts = {[1 2 3 4 5] [1] [1;4] [1;5] [1 NaN;2 3] [1;2]};
 allModels(2).contrastNames = {'all' 'allRHits' 'allRHitsxCR' 'allRHitsxFA' 'allRHitsxFHits_Miss', 'RHitsxFHits'};
 
+allModels(3).name = 'byMemoryFHitMiss_model';
+allModels(3).type = 'univariate_FIR';
+allModels(3).contrasts = {[1 2 3 4] [1] [1;3] [1;4] [1;2]};
+allModels(3).contrastNames = {'all' 'allRHits' 'allRHitsxCR' 'allRHitsxFA' 'allRHitsxFHits_Miss'};
+
 % enable selecting to analyze different models
 modelSelect = 0;
 for imodel=1:size(allModels,2)
