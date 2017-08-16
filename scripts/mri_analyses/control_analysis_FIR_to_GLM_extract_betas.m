@@ -6,7 +6,7 @@
 initialize_ABCDCon
 
 roi_dirs = {'ashs_left','ashs_right'};
-b.all_ROIs = {'brCA1_body', 'brCA2_3_DG_body'};
+b.all_ROIs = {'brCA1_body', 'brCA2_3_DG_body', 'brwhole_hippo'};
 FIR_order = 10; % this is a parameter that's set in `control_analysis_first_level_FIR.m`
 
 %%%MODEL DEFINITIONS 
