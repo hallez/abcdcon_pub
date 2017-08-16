@@ -315,6 +315,6 @@ all_betas_tidy %>%
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
-                                "FIR_betas_RHitsVSFhitsMiss_geomline_both-hemi_shaded-errorbars.pdf"),
+                                "FIR_betas_RHitsVSFhitsMiss_geomline_left-hemi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
