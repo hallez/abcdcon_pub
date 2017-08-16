@@ -49,27 +49,28 @@ SAVE_GRAPHS_FLAG <-1
 load(paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), 'group_spatial_trial_patterns.RData'))
 load(paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), 'group_temporal_trial_patterns.RData'))
 
+tmp <- spatial_trials %>%
+  dplyr::filter(subj == "s001", roi == "CA1_body", hemi =="left")
+
+tmp_mtx <- tmp %>%
+  tidyr::spread(col_name, r) %>%
+  dplyr::select(-roi, -subj, -hemi, -condition)
+
+tmp_mtx_small <- tmp_mtx[178:183, 1:5]
+
+# try using `ggcorrplot`
+# devtools::install_github("kassambara/ggcorrplot")
+library("ggcorrplot")
+
+ggcorrplot(tmp_mtx[,-1]) # do not plot labels column
+
+# try using `ggplot::geom_tile`
+# NEED TO FIGURE OUT HOW TO MAKE SPARSE MATRICES NOT LOOK SHITTY
 spatial_trials %>%
-  dplyr::filter(subj == "s001", roi == "CA1_body", hemi =="left") -> tmp
-ggplot2::ggplot(reshape2::melt(tmp), ggplot2::aes(row_name, col_name, fill = value)) + ggplot2::geom_tile() + ggplot2::theme(axis.text.x = ggplot2::element_blank())
-
-# try plotting using `ggcorr`
-library("GGally")
-# to test:
-nba = read.csv("http://datasets.flowingdata.com/ppg2008.csv")
-ggcorr(nba)
-# on my data
-# try feeding it an existing correlation matrix
-ggcorr(data = NULL, cor_matrix = cor(tmp$r, use = "everything"))
-# maybe try moving around so formatted as a matrix?
-tmp %>%
-  dplyr::select(col_name, row_name, r)
-
-
-# try plotting using `superheat`
-devtools::install_github("rlbarter/superheat")
-library("superheat")
-# to test
-superheat::superheat(mtcars,
-          # scale the matrix columns
-          scale = TRUE)
+  dplyr::filter(hemi == "left") %>%
+  dplyr::filter(subj %in% c("s001", "s002", "s006", "s007", "s008")) %>%
+  ggplot2::ggplot(ggplot2::aes(row_name, col_name, fill = r)) +
+  ggplot2::geom_tile() +
+  ggplot2::theme(axis.text.y = ggplot2::element_blank(), axis.title.y = ggplot2::element_blank(),
+                 axis.text.x = ggplot2::element_blank(), axis.title.x = ggplot2::element_blank()) +
+  ggplot2::facet_grid(subj ~ condition)
