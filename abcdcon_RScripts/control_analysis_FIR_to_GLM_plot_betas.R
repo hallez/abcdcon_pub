@@ -33,9 +33,11 @@ analyzed_mri_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$direc
 raw_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$raw_behavioral))
 analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_behavioral))
 dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
-graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
-                          halle::ensure_trailing_slash("writeups"),
-                          halle::ensure_trailing_slash("figures"))
+dropbox_graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
+                                  halle::ensure_trailing_slash("writeups"),
+                                  halle::ensure_trailing_slash("figures"))
+graph_fpath_out <- paste0(dropbox_graph_fpath_out, "FIR-to-GLM")
+dir.create(graph_fpath_out) # will throw an error if this already exists
 
 #' ## Setup other variables
 #' ### Flags
@@ -50,7 +52,7 @@ for(isub in 1:length(subjects)){
 
 #' ### Other variables (e.g., ROIs of interest)
 hemis <- c("ashs_left", "ashs_right")
-ROIs <- c("brCA1_body", "brCA2_3_DG_body")
+ROIs <- c("brCA1_body", "brCA2_3_DG_body", "brwhole_hippo")
 model_name <- "byMemoryFHitMiss"
 all_betas <- data.frame()
 
@@ -118,7 +120,8 @@ all_betas_tidy <- all_betas %>%
   dplyr::ungroup() %>%
   # create better ROI labels for plots
   dplyr::mutate(roi_lbl = ifelse(roi == "brCA1_body", "CA1",
-                                 ifelse(roi == "brCA2_3_DG_body", "CA23DG", roi)))
+                                 ifelse(roi == "brCA2_3_DG_body", "CA23DG",
+                                        ifelse(roi == "brwhole_hippo", "HC", roi))))
 
 #' ## Peek at tidied data
 head(all_betas_tidy)
@@ -138,6 +141,7 @@ all_betas_tidy %>%
 #' ### both hemi
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
@@ -150,10 +154,11 @@ all_betas_tidy %>%
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
   ggplot2::facet_grid(.~hemi) +
   ggplot2::ylab("mean beta value") +
-  ggplot2::xlab("FIR timepoint")
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_both-hemi.pdf"),
                   width=8, height=6)
 }
@@ -161,6 +166,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### both hemi, shaded error bars
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
@@ -172,10 +178,11 @@ all_betas_tidy %>%
   ggplot2::geom_line() +
   ggplot2::facet_grid(.~hemi) +
   ggplot2::ylab("mean beta value") +
-  ggplot2::xlab("FIR timepoint")
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_both-hemi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
@@ -183,6 +190,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### both hemi, no errorbars
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
@@ -194,10 +202,11 @@ all_betas_tidy %>%
   ggplot2::geom_point() +
   ggplot2::facet_grid(.~hemi) +
   ggplot2::ylab("mean beta value") +
-  ggplot2::xlab("FIR timepoint")
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_both-hemi_no-errorbars.pdf"),
                   width=8, height=6)
 }
@@ -205,6 +214,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### just left hemi
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
@@ -217,10 +227,11 @@ all_betas_tidy %>%
   ggplot2::geom_point() +
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val))  +
   ggplot2::ylab("mean beta value") +
-  ggplot2::xlab("FIR timepoint")
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_left-hemi.pdf"),
                   width=8, height=6)
 }
@@ -228,6 +239,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### just left hemi, shaded error bars
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
@@ -243,7 +255,7 @@ all_betas_tidy %>%
   ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_left-hemi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
@@ -251,6 +263,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### just left hemi, facet by roi_lbl
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
@@ -264,10 +277,11 @@ all_betas_tidy %>%
   ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
   ggplot2::facet_grid(.~roi_lbl)  +
   ggplot2::ylab("mean beta value") +
-  ggplot2::xlab("FIR timepoint")
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHits_geomline_left-hemi_facet-roi.pdf"),
                   width=8, height=6)
 }
@@ -275,6 +289,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' ### R, FHitANDMiss: both hemi, shaded error bars
 all_betas_tidy %>%
   dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
@@ -286,17 +301,19 @@ all_betas_tidy %>%
   ggplot2::geom_line() +
   ggplot2::facet_grid(roi_lbl~hemi) +
   ggplot2::ylab("mean beta value") +
-  ggplot2::xlab("FIR timepoint")
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHitsVSFhitsMiss_geomline_both-hemi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
 
-#' ### R, FHitANDMiss: both hemi, shaded error bars just left hemi
+#' ### R, FHitANDMiss: left hemi, shaded error bars
 all_betas_tidy %>%
   dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
@@ -314,7 +331,33 @@ all_betas_tidy %>%
 
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(file = paste0(graph_fpath_out,
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
                                 "FIR_betas_RHitsVSFhitsMiss_geomline_left-hemi_shaded-errorbars.pdf"),
-                  width=8, height=6)
+                  width=7, height=6)
 }
+
+#' ### R, FHitANDMiss: left hemi, shaded error bars, CA1/CA23DG (body) and HC
+all_betas_tidy %>%
+  dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
+  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG", "HC")) %>%
+  dplyr::filter(hemi == "ashs_left") %>%
+  dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val) %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = regressor_name)) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = regressor_name, fill = regressor_name), alpha = 0.2) +
+  ggplot2::geom_line() +
+  ggplot2::facet_grid(roi_lbl~.) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = file.path(graph_fpath_out,
+                                "FIR_betas_RHitsVSFhitsMiss_geomline_left-hemi_shaded-errorbars_inclHC.pdf"),
+                  width=7, height=6)
+}
+
