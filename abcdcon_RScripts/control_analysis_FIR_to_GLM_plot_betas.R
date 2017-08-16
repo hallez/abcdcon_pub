@@ -108,7 +108,7 @@ all_betas_tidy <- all_betas %>%
   dplyr::mutate(beta_number = as.numeric(beta_number_bare)) %>%
   dplyr::mutate(beta_fact = as.factor(beta_number)) %>%
   # filter out regressors for motion, etc.
-  dplyr::filter(regressor_name %in% c("RHit", "FHitsAndMisses", "FA", "CR")) %>% #NB: currently won't work for both FIR models (FHit, Miss vs FHitsANDMisses)
+  dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses", "FA", "CR")) %>% #NB: currently won't work for both FIR models (FHit, Miss vs FHitsANDMisses)
   # ensure that trials are in order (b/c sequencing betas assumes this)
   dplyr::arrange(subj_id, hemi, roi, run_number, beta_ID) %>%
   # based on https://stackoverflow.com/questions/30793033/r-add-columns-indicating-start-and-end-for-a-sequence-within-columns (see setup in question post)
@@ -120,10 +120,14 @@ all_betas_tidy <- all_betas %>%
   dplyr::mutate(roi_lbl = ifelse(roi == "brCA1_body", "CA1",
                                  ifelse(roi == "brCA2_3_DG_body", "CA23DG", roi)))
 
+#' ## Peek at tidied data
+head(all_betas_tidy)
+unique(all_betas_tidy$regressor_name)
+
 #' # Print what summarized values should be
 all_betas_tidy %>%
-  dplyr::filter(regressor_name == "RHit") %>%
-  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
+  dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
@@ -268,9 +272,9 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
-#' ### R, F, Miss: both hemi, shaded error bars
+#' ### R, FHitANDMiss: both hemi, shaded error bars
 all_betas_tidy %>%
-  dplyr::filter(regressor_name %in% c("RHit", "FHit", "Miss")) %>%
+  dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
@@ -283,6 +287,31 @@ all_betas_tidy %>%
   ggplot2::facet_grid(roi_lbl~hemi) +
   ggplot2::ylab("mean beta value") +
   ggplot2::xlab("FIR timepoint")
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(file = paste0(graph_fpath_out,
+                                "FIR_betas_RHitsVSFhitsMiss_geomline_both-hemi_shaded-errorbars.pdf"),
+                  width=8, height=6)
+}
+
+#' ### R, FHitANDMiss: both hemi, shaded error bars just left hemi
+all_betas_tidy %>%
+  dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
+  dplyr::filter(hemi == "ashs_left") %>%
+  dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
+  dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
+                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
+                   min_val = gmean_beta_val - sem_beta_val,
+                   max_val = gmean_beta_val + sem_beta_val) %>%
+  ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = regressor_name)) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = regressor_name, fill = regressor_name), alpha = 0.2) +
+  ggplot2::geom_line() +
+  ggplot2::facet_grid(roi_lbl~.) +
+  ggplot2::ylab("mean beta value") +
+  ggplot2::xlab("FIR timepoint") +
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
+
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(graph_fpath_out,
