@@ -33,9 +33,11 @@ analyzed_mri_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$direc
 raw_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$raw_behavioral))
 analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_behavioral))
 dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
-graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
-                          halle::ensure_trailing_slash("writeups"),
-                          halle::ensure_trailing_slash("figures"))
+dropbox_graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
+                                  halle::ensure_trailing_slash("writeups"),
+                                  halle::ensure_trailing_slash("figures"))
+graph_fpath_out <- paste0(dropbox_graph_fpath_out, "plot-PS-matrices")
+dir.create(graph_fpath_out) # will throw an error if this already exists
 
 #' ## Setup other variables
 #' ### Flags
@@ -53,10 +55,16 @@ tmp <- spatial_trials %>%
   dplyr::filter(subj == "s001", roi == "CA1_body", hemi =="left")
 
 tmp_mtx <- tmp %>%
-  tidyr::spread(col_name, r) %>%
-  dplyr::select(-roi, -subj, -hemi, -condition)
+  tidyr::spread(col_name, r)
+colnames(tmp_mtx) <- NULL # this is part of my hack to remove the labels
 
 tmp_mtx_small <- tmp_mtx[178:183, 1:5]
+
+# try using `ggcorr`
+library("GGally")
+GGally::ggcorr(data = tmp_mtx[,6:ncol(tmp_mtx)])
+  # repeating blank based on:L https://stackoverflow.com/questions/28427572/manipulating-axis-titles-in-ggpairs-ggally
+  # ggplot2::geom_text(label = rep('', ncol(tmp_mtx))) #this does not work
 
 # try using `ggcorrplot`
 # devtools::install_github("kassambara/ggcorrplot")
