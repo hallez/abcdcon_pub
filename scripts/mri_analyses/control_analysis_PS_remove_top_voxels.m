@@ -30,55 +30,52 @@ for isub=1:length(subjects)
     % this will load in a structure called `ids`
     if(exist(trial_lbls_fname, 'file'))
         load(trial_lbls_fname);
+        
+        for idir = 1:length(roi_dirs)
+            for iroi=1:length(rois)
+                b.cur_ROI_dir = fullfile(analMRIDir, b.curSubj,'ROIs', roi_dirs{idir});
+                cur_roi = rois{iroi};
+                cur_hemi = roi_dirs{idir}(strfind(roi_dirs{idir},'_')+1:end);
+
+                % read in existing pattern matrix
+                % this gets created by `RSA_btwn_runs_exclude_outlier_trials.m`
+                pattern_mtx_fname = fullfile(b.cur_ROI_dir, sprintf('%s_pattern_mtx_no_outlier_trials_all_runs.mat', cur_roi));
+                if(exist(pattern_mtx_fname, 'file'))
+                    load(pattern_mtx_fname)
+
+                    % read in voxels to exclude  
+                    % this gets created by `control_analysis_drop_voxels.R`
+                    exclude_voxels_fname = fullfile(b.analMRIDir, b.curSubj, sprintf('%s_%s_top_%d_voxels.csv', cur_hemi, cur_roi, num_vox));
+                    
+                    if(exist(exclude_voxels_fname, 'file'))
+                        exclude_voxels = csvread(exclude_voxels_fname);
+                        
+                        % this is based on the approach in `RSA_btwn_runs_exclude_outlier_trials.m`
+                        % because reading in matrices where bad trials and voxels have
+                        % already been removed, no need to do this again
+                        % remove rows for voxels to drop
+                        pattern_truncated = pattern_all_runs;
+                        pattern_truncated(exclude_voxels, :) = [];
+
+                        % take correlation across all voxels and all trials
+                        % and save this out too 
+                        pattern_corr = corr(pattern_truncated);
+                        fname_corr_out = cellstr(fullfile(b.cur_ROI_dir,sprintf('%s_pattern_corr_no_outlier_trials_%02d_truncated_voxels_all_runs', cur_roi, num_vox)));
+                        save(fname_corr_out{:},'pattern_corr')
+                    else
+                        sprintf('\nExclude voxels file %s does not exist.', exclude_voxels_fname)
+                        continue;
+                    end %exist(exclude_voxels_fname                     
+                else
+                    sprintf('\nPattern matrix file %s does not exist.', pattern_mtx_fname)
+                    continue;
+                end % exist(pattern_mtx_fname
+                clear pattern_all_runs pattern_corr
+            end %iroi
+        end %idir
     else
         sprintf('\n Labels file for subject %s does not exist. Skipping.', b.curSubj)
         continue;
-    end
-    
-    for idir = 1:length(roi_dirs)
-        for iroi=1:length(rois)
-            b.cur_ROI_dir = fullfile(analMRIDir, b.curSubj,'ROIs', roi_dirs{idir});
-            cur_roi = rois{iroi};
-
-            % read in existing pattern matrix
-            % this gets created by `RSA_btwn_runs_exclude_outlier_trials.m`
-            pattern_mtx_fname = fullfile(b.cur_ROI_dir, sprintf('%s_pattern_mtx_no_outlier_trials_all_runs.mat', cur_roi));
-            if(exist(pattern_mtx_fname, 'file'))
-                load(pattern_mtx_fname)
-            else
-                sprintf('\nPattern matrix file %s does not exist.', pattern_mtx_fname)
-                continue;
-            end
-
-            % read in voxels to exclude  
-            % this gets created by `control_analysis_drop_voxels.R`
-            exclude_voxels_fname = fullfile(b.analMRIDir, b.curSubj, sprintf('%s_top_%d_voxels.csv', cur_roi, num_vox));
-            if(exist(exclude_voxels_fname, 'file'))
-                exclude_voxels = csvread(exclude_voxels_fname);
-            else
-                sprintf('\nExclude voxels file %s does not exist.', exclude_voxels_fname)
-                continue;
-            end
-            
-            % this is based on the approach in `RSA_btwn_runs_exclude_outlier_trials.m`
-            % because reading in matrices where bad trials and voxels have
-            % already been removed, no need to do this again
-            % NaN out voxels to exclude
-            pattern_no_bad_voxels = pattern_all_runs;
-            pattern_no_bad_voxels(exclude_voxels,:) = NaN;
-
-            % now, remove these NaN rows
-            % based on: https://www.mathworks.com/matlabcentral/newsreader/view_thread/287085
-            pattern_truncated = pattern_no_bad_voxels;
-            pattern_truncated = pattern_truncated(~isnan(pattern_truncated(:,2)),:);
-
-            % take correlation across all voxels and all trials
-            % and save this out too 
-            pattern_corr = corr(pattern_truncated);
-            fname_corr_out = cellstr(fullfile(b.cur_ROI_dir,sprintf('%s_pattern_corr_no_outlier_trials_%02d_truncated_voxels_all_runs', cur_roi, num_vox)));
-            save(fname_corr_out{:},'pattern_corr') 
-            
-        end %iroi
-    end %idir
+    end %exist(trial_lbls_fname
 end %isub
 
