@@ -103,7 +103,7 @@ for(idir in c(1:length(roi_dirs))) {
         exclude_vox_ids <- rank_vals$voxel_number
 
         # ---   save out voxels to exclude ---
-        write.table(exclude_vox_ids, file = file.path(analyzed_mri_dir, subj_number, sprintf("%s_top_%s_voxels.csv", cur_roi, num_vox)), row.names=FALSE, col.names = FALSE, sep = ",")
+        write.table(exclude_vox_ids, file = file.path(analyzed_mri_dir, subj_number, sprintf("%s_%s_top_%s_voxels.csv", hemi_label, cur_roi, num_vox)), row.names=FALSE, col.names = FALSE, sep = ",")
 
       } else {
         print(sprintf("Current pattern matrix file %s does not exist. Continuing on.", cur_file))
