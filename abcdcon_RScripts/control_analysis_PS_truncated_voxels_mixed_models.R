@@ -39,7 +39,7 @@ dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
 dropbox_graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
                                   halle::ensure_trailing_slash("writeups"),
                                   halle::ensure_trailing_slash("figures"))
-graph_fpath_out <- paste0(dropbox_graph_fpath_out, sprintf("PS_drop_%02d_voxels", num_vox))
+graph_fpath_out <- paste0(dropbox_graph_fpath_out, ("PS_drop_top_voxels"))
 dir.create(graph_fpath_out) # will throw an error if this already exists
 
 #' ## Setup other variables
