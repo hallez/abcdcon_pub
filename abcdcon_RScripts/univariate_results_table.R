@@ -50,7 +50,8 @@ Result=t(mapply(FUN=mni_to_region_name,x=m$x,y=m$y,z=m$z))
 #' ## Split hemi into a separate column
 results_fmt <- Result %>%
   as.data.frame() %>%
-  tidyr::separate(region, into = c("region_name", "hemi"), sep = "_")
+  tidyr::separate(region, into = c("region_name", "hemi"), sep = "_") %>%
+  dplyr::select(-distance)
 
 #' ## Print out labels
 knitr::kable(results_fmt)
