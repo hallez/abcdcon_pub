@@ -540,11 +540,11 @@ dplyr::filter(condition != "anyVideo_sameHouse") %>%
                  axis.text.y = ggplot2::element_text(size = 10), axis.title.y = ggplot2::element_text(size = 20),
                  strip.text.y = ggplot2::element_text(size = 20),
                  legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_blank(),
-                 plot.title = ggplot2::element_text(size=25, vjust=2)) +
+                 plot.title = ggplot2::element_blank()) +
   ggplot2::theme(legend.position = "none")
 
 ggplot2::ggsave(file = paste0(dropbox_dir,
-                              ensureTrailingSlash("writeups"),
-                              ensureTrailingSlash("figures"),
+                              halle::ensure_trailing_slash("writeups"),
+                              halle::ensure_trailing_slash("figures"),
                               "sameAll_sameSome_diffAll_bothHemi_control_ROIs.pdf"),
                 width=10, height=8)
