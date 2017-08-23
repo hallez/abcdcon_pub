@@ -86,13 +86,13 @@ all_trials_z_better_names$condition <- car::recode(all_trials_z_better_names$con
 unique(all_trials_z_better_names$condition)
 
 # filter so just have control ROIs
-all_trials_body <-
+all_trials <-
   all_trials_z_better_names %>%
   dplyr::filter(roi %in% c("ERC", "subiculum")) %>%
   droplevels(.)
 
-head(all_trials_body)
-unique(all_trials_body$roi)
+head(all_trials)
+unique(all_trials$roi)
 
 #' ## Save out datframe so can be used in other analyses
 save(all_trials_z_better_names,file=paste0(analyzed_mri_dir, 'group_z_renamed_spatial_temporal_PS_by_trial_control_ROIs.RData'))
@@ -107,72 +107,200 @@ save(all_trials_z_better_names,file=paste0(analyzed_mri_dir, 'group_z_renamed_sp
 # but we've decided to define space as `diffVideo/sameHouse` vs `diffVideo/diffHouse`
 
 #' ## filter so just have conditions of interest
-all_trials_body_SVSH_DVSH_DVDH <- NULL
-all_trials_body_SVSH_DVSH_DVDH <-
-  all_trials_body %>%
+all_trials_SVSH_DVSH_DVDH <- NULL
+all_trials_SVSH_DVSH_DVDH <-
+  all_trials %>%
   dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse", "diffVideo_diffHouse"))
-head(all_trials_body_SVSH_DVSH_DVDH)
-unique(all_trials_body_SVSH_DVSH_DVDH$condition)
-unique(all_trials_body_SVSH_DVSH_DVDH$hemi)
-unique(all_trials_body_SVSH_DVSH_DVDH$roi)
+head(all_trials_SVSH_DVSH_DVDH)
+unique(all_trials_SVSH_DVSH_DVDH$condition)
+unique(all_trials_SVSH_DVSH_DVDH$hemi)
+unique(all_trials_SVSH_DVSH_DVDH$roi)
 
 #' ### main effects w/o random slopes
-lmm.all_cond_roi_hemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH, REML = FALSE)
+lmm.all_cond_roi_hemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi + condition*hemi + roi*hemi + (1|subj), data = all_trials_SVSH_DVSH_DVDH, REML = FALSE)
 summary(lmm.all_cond_roi_hemi.no_random_slopes)
 
 #' ### 3-way interaction w/o random slopes
-lmm.all_condXroiXhemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi*hemi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH, REML = FALSE)
+lmm.all_condXroiXhemi.no_random_slopes <- lme4::lmer(z_r ~ condition*roi*hemi + (1|subj), data = all_trials_SVSH_DVSH_DVDH, REML = FALSE)
 summary(lmm.all_condXroiXhemi.no_random_slopes)
 
 #' #### Model comparisons (ROI x Context Similarity x Hemisphere)
 anova(lmm.all_cond_roi_hemi.no_random_slopes, lmm.all_condXroiXhemi.no_random_slopes)
 
 #' # Left hemi only
-all_trials_body_SVSH_DVSH_DVDH_left <-
-  all_trials_body_SVSH_DVSH_DVDH %>%
+all_trials_SVSH_DVSH_DVDH_left <-
+  all_trials_SVSH_DVSH_DVDH %>%
   dplyr::filter(hemi == "left")
 
-lmm.all_cond_roi.left <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_left, REML = FALSE)
+lmm.all_cond_roi.left <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = all_trials_SVSH_DVSH_DVDH_left, REML = FALSE)
 summary(lmm.all_cond_roi.left)
 
-lmm.all_condXroi.left <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_left, REML=FALSE)
+lmm.all_condXroi.left <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_SVSH_DVSH_DVDH_left, REML=FALSE)
 summary(lmm.all_condXroi.left)
 
 #' ## model comparisons (Left Hemi: ROI x Context Similarity)
 anova(lmm.all_cond_roi.left, lmm.all_condXroi.left)
 
+#' ## ERC, left, spatial
+all_trials_DVSH_DVDH_ERC_left <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "ERC") %>%
+  dplyr::filter(hemi == "left") %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+
+lmm.null.ERC.left.spatial <- lme4::lmer(z_r ~ (1|subj), data = all_trials_DVSH_DVDH_ERC_left, REML = FALSE)
+summary(lmm.null.ERC.left.spatial)
+
+lmm.DVSH_DVDH.no_random_slopes.ERC.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_DVSH_DVDH_ERC_left, REML = FALSE)
+summary(lmm.DVSH_DVDH.no_random_slopes.ERC.left)
+
+#' ### model comparison (Left ERC: Spatial Context Similarity)
+anova(lmm.null.ERC.left.spatial, lmm.DVSH_DVDH.no_random_slopes.ERC.left)
+
+#' ## ERC, left, temporal
+all_trials_SVSH_DVSH_ERC_left <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "ERC") %>%
+  dplyr::filter(hemi == "left") %>%
+  dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+
+lmm.null.ERC.left.temporal <- lme4::lmer(z_r ~ (1|subj), data = all_trials_SVSH_DVSH_ERC_left, REML = FALSE)
+summary(lmm.null.ERC.left.temporal)
+
+lmm.SVSH_DVSH.no_random_slopes.ERC.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_SVSH_DVSH_ERC_left, REML = FALSE)
+summary(lmm.SVSH_DVSH.no_random_slopes.ERC.left)
+
+#' ### model comparison (Left ERC: Episodic Context Similarity)
+anova(lmm.null.ERC.left.temporal, lmm.SVSH_DVSH.no_random_slopes.ERC.left)
+
+#' ## subiculum, left, spatial
+all_trials_DVSH_DVDH_subiculum_left <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "subiculum") %>%
+  dplyr::filter(hemi == "left") %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+
+lmm.null.subiculum.left.spatial <- lme4::lmer(z_r ~ (1|subj), data = all_trials_DVSH_DVDH_subiculum_left, REML = FALSE)
+summary(lmm.null.subiculum.left.spatial)
+
+lmm.DVSH_DVDH.no_random_slopes.subiculum.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_DVSH_DVDH_subiculum_left, REML = FALSE)
+summary(lmm.DVSH_DVDH.no_random_slopes.subiculum.left)
+
+#' ### model comparison (Left subiculum: Spatial Context Similarity)
+anova(lmm.null.subiculum.left.spatial, lmm.DVSH_DVDH.no_random_slopes.subiculum.left)
+
+#' ## subiculum, left, temporal
+all_trials_SVSH_DVSH_subiculum_left <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "subiculum") %>%
+  dplyr::filter(hemi == "left") %>%
+  dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+
+lmm.null.subiculum.left.temporal <- lme4::lmer(z_r ~ (1|subj), data = all_trials_SVSH_DVSH_subiculum_left, REML = FALSE)
+summary(lmm.null.subiculum.left.temporal)
+
+lmm.SVSH_DVSH.no_random_slopes.subiculum.left <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_SVSH_DVSH_subiculum_left, REML = FALSE)
+summary(lmm.SVSH_DVSH.no_random_slopes.subiculum.left)
+
+#' ### model comparison (Left subiculum: Episodic Context Similarity)
+anova(lmm.null.subiculum.left.temporal, lmm.SVSH_DVSH.no_random_slopes.subiculum.left)
 
 #' # Right hemi only
-all_trials_body_SVSH_DVSH_DVDH_right <-
-  all_trials_body_SVSH_DVSH_DVDH %>%
+all_trials_SVSH_DVSH_DVDH_right <-
+  all_trials_SVSH_DVSH_DVDH %>%
   dplyr::filter(hemi == "right")
 
-lmm.all_cond_roi.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_right, REML = FALSE)
+lmm.all_cond_roi.right <- lme4::lmer(z_r ~ condition + roi + (1|subj), data = all_trials_SVSH_DVSH_DVDH_right, REML = FALSE)
 summary(lmm.all_cond_roi.right)
 
-lmm.all_condXroi.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_body_SVSH_DVSH_DVDH_right, REML=FALSE)
+lmm.all_condXroi.right <- lme4::lmer(z_r ~ condition*roi + (1|subj), data = all_trials_SVSH_DVSH_DVDH_right, REML=FALSE)
 summary(lmm.all_condXroi.right)
 
 #' ## model comparisons (Right Hemi: ROI x Context Similarity)
 anova(lmm.all_cond_roi.right, lmm.all_condXroi.right)
 
+#' ## ERC, right, spatial
+all_trials_DVSH_DVDH_ERC_right <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "ERC") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+
+lmm.null.ERC.right.spatial <- lme4::lmer(z_r ~ (1|subj), data = all_trials_DVSH_DVDH_ERC_right, REML = FALSE)
+summary(lmm.null.ERC.right.spatial)
+
+lmm.DVSH_DVDH.no_random_slopes.ERC.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_DVSH_DVDH_ERC_right, REML = FALSE)
+summary(lmm.DVSH_DVDH.no_random_slopes.ERC.right)
+
+#' ### model comparison (Right ERC: Spatial Context Similarity)
+anova(lmm.null.ERC.right.spatial, lmm.DVSH_DVDH.no_random_slopes.ERC.right)
+
+#' ## ERC, right, temporal
+all_trials_SVSH_DVSH_ERC_right <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "ERC") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+
+lmm.null.ERC.right.temporal <- lme4::lmer(z_r ~ (1|subj), data = all_trials_SVSH_DVSH_ERC_right, REML = FALSE)
+summary(lmm.null.ERC.right.temporal)
+
+lmm.SVSH_DVSH.no_random_slopes.ERC.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_SVSH_DVSH_ERC_right, REML = FALSE)
+summary(lmm.SVSH_DVSH.no_random_slopes.ERC.right)
+
+#' ### model comparison (Right ERC: Episodic Context Similarity)
+anova(lmm.null.ERC.right.temporal, lmm.SVSH_DVSH.no_random_slopes.ERC.right)
+
+#' ## subiculum, right, spatial
+all_trials_DVSH_DVDH_subiculum_right <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "subiculum") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
+
+lmm.null.subiculum.right.spatial <- lme4::lmer(z_r ~ (1|subj), data = all_trials_DVSH_DVDH_subiculum_right, REML = FALSE)
+summary(lmm.null.subiculum.right.spatial)
+
+lmm.DVSH_DVDH.no_random_slopes.subiculum.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_DVSH_DVDH_subiculum_right, REML = FALSE)
+summary(lmm.DVSH_DVDH.no_random_slopes.subiculum.right)
+
+#' ### model comparison (Right subiculum: Spatial Context Similarity)
+anova(lmm.null.subiculum.right.spatial, lmm.DVSH_DVDH.no_random_slopes.subiculum.right)
+
+#' ## subiculum, right, temporal
+all_trials_SVSH_DVSH_subiculum_right <-
+  all_trials_SVSH_DVSH_DVDH %>%
+  dplyr::filter(roi == "subiculum") %>%
+  dplyr::filter(hemi == "right") %>%
+  dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
+
+lmm.null.subiculum.right.temporal <- lme4::lmer(z_r ~ (1|subj), data = all_trials_SVSH_DVSH_subiculum_right, REML = FALSE)
+summary(lmm.null.subiculum.right.temporal)
+
+lmm.SVSH_DVSH.no_random_slopes.subiculum.right <- lme4::lmer(z_r ~ condition + (1|subj), data = all_trials_SVSH_DVSH_subiculum_right, REML = FALSE)
+summary(lmm.SVSH_DVSH.no_random_slopes.subiculum.right)
+
+#' ### model comparison (Right subiculum: Episodic Context Similarity)
+anova(lmm.null.subiculum.right.temporal, lmm.SVSH_DVSH.no_random_slopes.subiculum.right)
+
+
 #' # Test for interactions between conditions - Episodic Context Similarity
 #' ## Print out what's in dataframe before start running stats
 # yes, this is redundant with when the dataframe gets setup
 # but better to be redundant and ensure you know what you're working with!
-all_trials_body_temporal <- NULL
-all_trials_body_temporal <-
-  all_trials_body %>%
+all_trials_temporal <- NULL
+all_trials_temporal <-
+  all_trials %>%
   dplyr::filter(condition %in% c("sameVideo_sameHouse", "diffVideo_sameHouse"))
-head(all_trials_body_temporal)
-unique(all_trials_body_temporal$condition)
-unique(all_trials_body_temporal$hemi)
-unique(all_trials_body_temporal$roi)
+head(all_trials_temporal)
+unique(all_trials_temporal$condition)
+unique(all_trials_temporal$hemi)
+unique(all_trials_temporal$roi)
 
 #' ## Model setup: Left
 # Now, we need to follow up the significant 3-way interaction in left hemi
 temporal_lmm_left <-
-  all_trials_body_temporal %>%
+  all_trials_temporal %>%
   dplyr::filter(hemi == "left")
 
 # print out what's in the dataframe so we're supersure before running stats
@@ -196,7 +324,7 @@ anova(lmm.ss2, lmm.ss3)
 
 #' ## Model setup: Right
 temporal_lmm_right <-
-  all_trials_body_temporal %>%
+  all_trials_temporal %>%
   dplyr::filter(hemi == "right")
 
 # print out what's in the dataframe so we're supersure before running stats
@@ -222,18 +350,18 @@ anova(lmm.ss2.right, lmm.ss3.right)
 #' ## Print out what's in dataframe before start running stats
 # yes, this is redundant with when the dataframe gets setup
 # but better to be redundant and ensure you know what you're working with!
-all_trials_body_spatial <- NULL
-all_trials_body_spatial <-
-  all_trials_body %>%
+all_trials_spatial <- NULL
+all_trials_spatial <-
+  all_trials %>%
   dplyr::filter(condition %in% c("diffVideo_sameHouse", "diffVideo_diffHouse"))
-head(all_trials_body_spatial)
-unique(all_trials_body_spatial$condition)
-unique(all_trials_body_spatial$hemi)
-unique(all_trials_body_spatial$roi)
+head(all_trials_spatial)
+unique(all_trials_spatial$condition)
+unique(all_trials_spatial$hemi)
+unique(all_trials_spatial$roi)
 
 #' ## Model setup: Left
 spatial_lmm_left <-
-  all_trials_body_spatial %>%
+  all_trials_spatial %>%
   dplyr::filter(hemi == "left")
 
 # print out what's in the dataframe so we're supersure before running stats
@@ -257,7 +385,7 @@ anova(lmm.ss2, lmm.ss3)
 
 #' ## Model setup: Right
 spatial_lmm_right <-
-  all_trials_body_spatial %>%
+  all_trials_spatial %>%
   dplyr::filter(hemi == "right")
 
 # print out what's in the dataframe so we're supersure before running stats
@@ -280,8 +408,8 @@ summary(lmm.ss3.right)
 anova(lmm.ss2.right, lmm.ss3.right)
 
 
-#' # Plot
-all_trials_body %>%
+#' # Plot left
+all_trials %>%
   dplyr::filter(condition != "anyVideo_sameHouse") %>%
   dplyr::filter(hemi == "left") %>%
   dplyr::mutate(roi_by_hemi = gsub("(.*?)_body", "left \\1", roi)) %>%
@@ -330,7 +458,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 }
 
 #' # Plot right
-all_trials_body %>%
+all_trials %>%
   dplyr::filter(condition != "anyVideo_sameHouse") %>%
   dplyr::filter(hemi == "right") %>%
   dplyr::mutate(roi_by_hemi = gsub("(.*?)_body", "right \\1", roi)) %>%
@@ -378,3 +506,45 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
+#' # Plot both hemi together
+all_trials %>%
+dplyr::filter(condition != "anyVideo_sameHouse") %>%
+  dplyr::group_by(roi, hemi, condition) %>%
+  dplyr::summarise(mean = mean(r),
+                   sd = sd(r),
+                   n = length(r),
+                   sem = sd(r)/sqrt(length(r))) %>%
+  # re-order conditions
+  dplyr::mutate(condition_ordered = factor(condition, levels = c("sameVideo_sameHouse", "diffVideo_sameHouse", "diffVideo_diffHouse"))) %>%
+  # put one space between same/diff and video/house and TWO spaces between where we'll want a line break
+  # this will help `gsub` only create 2 lines for each condition name rather than 4 lines
+  dplyr::mutate(condition_renamed = car::recode(condition_ordered, "'diffVideo_sameHouse' = 'different video  same house'; 'diffVideo_diffHouse' = 'different video  different house' ; 'sameVideo_sameHouse' = 'same video  same house'")) %>%
+  dplyr::mutate(condition_renamed_ordered = factor(condition_renamed, levels = c("same video  same house", "different video  same house", "different video  different house"))) %>%
+  # based on https://www.r-bloggers.com/line-breaks-between-words-in-axis-labels-in-ggplot-in-r/
+  dplyr::mutate(condition_breaks = gsub("  ", "\n", condition_renamed_ordered)) %>%
+  ggplot2::ggplot(ggplot2::aes(x = condition_breaks, y = mean, fill = condition_breaks))  +
+  ggplot2::geom_bar(stat = "identity") +
+  ggplot2::facet_grid(roi ~ hemi) +
+  # to match colors from method figure:
+  # "#CC6633" = orange (diff video, diff house)
+  # "#CC6699" = fuscia (same video, same house)
+  # "#66CC33" = green (different video, same house)
+  ggplot2::scale_fill_manual(values = c("#CC6633", "#66CC33", "#CC6699")) +
+  ggplot2::geom_errorbar(ggplot2::aes(ymax = mean + sem,
+                                      ymin = mean - sem,
+                                      width=0.10)) +
+  ggplot2::ggtitle("Neural pattern similarity for spatial and episodic contexts") +
+  ggplot2::ylab("Mean Pattern Similarity (r)") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(size = 9, color = "black"), axis.title.x = ggplot2::element_blank(),
+                 strip.text.x = ggplot2::element_text(size = 20),
+                 axis.text.y = ggplot2::element_text(size = 10), axis.title.y = ggplot2::element_text(size = 20),
+                 strip.text.y = ggplot2::element_text(size = 20),
+                 legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_blank(),
+                 plot.title = ggplot2::element_text(size=25, vjust=2)) +
+  ggplot2::theme(legend.position = "none")
+
+ggplot2::ggsave(file = paste0(dropbox_dir,
+                              ensureTrailingSlash("writeups"),
+                              ensureTrailingSlash("figures"),
+                              "sameAll_sameSome_diffAll_bothHemi_control_ROIs.pdf"),
+                width=10, height=8)
