@@ -140,6 +140,24 @@ summary(lmm.all_condXroi.left)
 #' ## model comparisons (Left Hemi: ROI x Context Similarity)
 anova(lmm.all_cond_roi.left, lmm.all_condXroi.left)
 
+#' ## Control analysis: Do the ROIs differ for space alone?
+# cannot include condition in the models b/c just one level
+all_trials_body_DVSH <-
+  all_trials_body_SVSH_DVSH_DVDH %>%
+  dplyr::filter(condition == "diffVideo_sameHouse")
+
+unique(all_trials_body_DVSH$condition)
+unique(all_trials_body_DVSH$roi)
+
+lmm.spat_roi.left <- lme4::lmer(z_r ~ (1|subj), data = all_trials_body_DVSH, REML = FALSE)
+summary(lmm.spat_roi.left)
+
+lmm.spatXroi.left <- lme4::lmer(z_r ~ roi + (1|subj), data = all_trials_body_DVSH, REML = FALSE)
+summary(lmm.spatXroi.left)
+
+#' ### model comparisons (Left Hemi: ROI x diffVideo_sameHouse)
+anova(lmm.spat_roi.left, lmm.spatXroi.left)
+
 #' ## CA1, left, spatial
 all_trials_body_DVSH_DVDH_CA1_left <-
   all_trials_body_SVSH_DVSH_DVDH %>%
