@@ -23,6 +23,7 @@ library(dplyr)
 #' ## Load config file
 project_dir <- "../"
 config <- yaml::yaml.load_file(paste0(project_dir,"config.yml"))
+SAVE_GRAPHS_FLAG <- 1
 
 #' ## Set paths as variables
 analyzed_mri_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_mri))
@@ -31,6 +32,12 @@ analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(confi
 contrast_est_path <- paste0(analyzed_mri_dir,halle::ensure_trailing_slash('univariate_sanityCheck'))
 contrast_est_fname <- 'cons_body_ROIs.csv' # this is created by `control_analysis_univariate_contrast_estimates_by_roi.m`
 contrast_est_fpath <- paste0(contrast_est_path,contrast_est_fname)
+dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
+dropbox_graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
+                                  halle::ensure_trailing_slash("writeups"),
+                                  halle::ensure_trailing_slash("figures"))
+graph_fpath_out <- paste0(dropbox_graph_fpath_out, "univariate-by-subfield")
+dir.create(graph_fpath_out) # will throw an error if this already exists
 
 if(file.exists(contrast_est_fpath)){
   cons <- NULL
@@ -74,7 +81,7 @@ if(file.exists(contrast_est_fpath)){
           axis.text.y = ggplot2::element_text(size = 20), axis.title.y=ggplot2::element_text(size = 20),
           legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_text(size=20)) +
     ggplot2::geom_errorbar(ggplot2::aes(ymin=lower,ymax=upper),position=ggplot2::position_dodge(width=0.9),color="black",width=0.25)
-  
+
   # --- split up hits by house ---
   cons %>%
     # Hadley-ify formatting
@@ -90,12 +97,26 @@ if(file.exists(contrast_est_fpath)){
     dplyr::filter(roi_file=="rCA1_body" | roi_file=="rCA2_3_DG_body" | roi_file=="rwhole_hippo",
                   condition %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
                   hemi == "ashs_left") %>%
-    ggplot2::ggplot(ggplot2::aes(roi_file, activity, fill=roi_file)) +
+    # re-label to pretty up plotting
+    dplyr::mutate(roi_lbl = car::recode(roi_file, "'rCA1_body' = 'CA1_body'; 'rCA2_3_DG_body' = 'CA2_3_DG_body'; 'rwhole_hippo' = 'HC'"),
+                  condition_lbl = car::recode(condition, "'brownRHitsxFHits_Miss' = 'brown house'; 'grayRHitsxFHits_Miss' = 'gray house'")) %>%
+    ggplot2::ggplot(ggplot2::aes(roi_lbl, activity, fill=roi_lbl)) +
     ggplot2::geom_bar(width=0.7,position=ggplot2::position_dodge(0.9),stat="identity") +
-    ggplot2::facet_grid(.~condition) +
-    ggplot2::ylab("mean activity") +
-    ggplot2::theme(axis.text.x = ggplot2::element_blank(), axis.title.x = ggplot2::element_blank(), strip.text.x = ggplot2::element_text(size = 15),
-                   axis.text.y = ggplot2::element_text(size = 20), axis.title.y=ggplot2::element_text(size = 20),
-                   legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_text(size=20)) +
-    ggplot2::geom_errorbar(ggplot2::aes(ymin=lower,ymax=upper),position=ggplot2::position_dodge(width=0.9),color="black",width=0.25)
+    ggplot2::facet_grid(.~condition_lbl) +
+    ggplot2::ylab("mean univariate activity") +
+    ggplot2::geom_errorbar(ggplot2::aes(ymin=lower,ymax=upper),position=ggplot2::position_dodge(width=0.9),color="black",width=0.15) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, color = "black"), axis.title.x = ggplot2::element_blank(),
+                   strip.text.x = ggplot2::element_text(size = 20),
+                   axis.text.y = ggplot2::element_text(size = 10), axis.title.y = ggplot2::element_text(size = 20),
+                   strip.text.y = ggplot2::element_text(size = 20),
+                   legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_blank(),
+                   strip.background = ggplot2::element_blank()) +
+    ggplot2::theme(legend.position = "none")
+
+  if(SAVE_GRAPHS_FLAG == 1){
+    ggplot2::ggsave(file = file.path(graph_fpath_out,
+                                     "RHits_FHitsANDMisses_brownVSgray_left-hemi.pdf"),
+                    width=8, height=6)
+  }
 }
