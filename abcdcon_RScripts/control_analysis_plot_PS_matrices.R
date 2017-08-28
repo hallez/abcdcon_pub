@@ -66,14 +66,8 @@ nroi <- length(rois)
 
 for(iroi in 1:nroi){
   # re-set plot layout for each ROI
-  grid::grid.newpage()
-  grid::pushViewport(viewport(layout = grid.layout(nrow = nsub, ncol = ncond)))
-
-  # A helper function to define a region on the layout
-  # from: http://www.sthda.com/english/wiki/ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page
-  define_region <- function(row, col){
-    viewport(layout.pos.row = row, layout.pos.col = col)
-  }
+  par(new = TRUE)
+  par(mfrow=c(nsub, ncond))
 
   for(isubj in 1:nsub){
     for(icond in 1:ncond){
@@ -93,7 +87,7 @@ for(iroi in 1:nroi){
 
       # TODO: format plots so subjects are in columns and conditions are in rows. save out separate files for each ROI
       cur_plot <- GGally::ggcorr(cur_dat_fmt, size = 0, legend.position = "none")
-      print(cur_plot, vp = define_region(row = isubj, col = icond))
+      print(cur_plot)
     } #icond
   } #isubj
 
