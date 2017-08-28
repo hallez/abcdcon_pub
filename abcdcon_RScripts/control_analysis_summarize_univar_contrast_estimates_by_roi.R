@@ -119,4 +119,26 @@ if(file.exists(contrast_est_fpath)){
                                      "RHits_FHitsANDMisses_brownVSgray_left-hemi.pdf"),
                     width=8, height=6)
   }
+
+  # --- statiscally compare brown vs gray house activity in the subfields ---
+  cons %>%
+    dplyr::filter(roi_file == "rCA1_body",
+                  contrast %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
+                  hemi == "ashs_left") %>%
+    ez::ezANOVA(.,
+                dv=.(activity),
+                wid=.(subject),
+                within=.(contrast),
+                detailed=TRUE)
+
+  cons %>%
+    dplyr::filter(roi_file == "rCA2_3_DG_body",
+                  contrast %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
+                  hemi == "ashs_left") %>%
+    ez::ezANOVA(.,
+                dv=.(activity),
+                wid=.(subject),
+                within=.(contrast),
+                detailed=TRUE)
+
 }
