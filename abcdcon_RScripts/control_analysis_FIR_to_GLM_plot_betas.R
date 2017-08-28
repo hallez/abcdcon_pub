@@ -132,7 +132,7 @@ all_betas_tidy %>%
   dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val)
@@ -144,7 +144,7 @@ all_betas_tidy %>%
   dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -169,7 +169,7 @@ all_betas_tidy %>%
   dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -193,7 +193,7 @@ all_betas_tidy %>%
   dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -218,7 +218,7 @@ all_betas_tidy %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -243,7 +243,7 @@ all_betas_tidy %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -267,14 +267,13 @@ all_betas_tidy %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
   ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = regressor_name, fill = regressor_name), alpha = 0.2) +
   ggplot2::geom_line() +
-  ggplot2::geom_point() +
-  ggplot2::geom_errorbar(ggplot2::aes(ymin = min_val, ymax = max_val)) +
   ggplot2::facet_grid(.~roi_lbl)  +
   ggplot2::ylab("mean beta value") +
   ggplot2::xlab("FIR timepoint") +
@@ -282,7 +281,7 @@ all_betas_tidy %>%
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = file.path(graph_fpath_out,
-                                "FIR_betas_RHits_geomline_left-hemi_facet-roi.pdf"),
+                                "FIR_betas_RHits_geomline_left-hemi_facet-roi_shaded-errorbars.pdf"),
                   width=8, height=6)
 }
 
@@ -292,7 +291,7 @@ all_betas_tidy %>%
   dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -317,7 +316,7 @@ all_betas_tidy %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
@@ -343,7 +342,7 @@ all_betas_tidy %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
-                   num_obs = length(mean_beta_val), # should be 8 if the subtract had one of each trial type per run
+                   num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
                    sem_beta_val = sd(mean_beta_val, na.rm = T) / sqrt(num_obs),
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
