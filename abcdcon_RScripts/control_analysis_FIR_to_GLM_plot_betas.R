@@ -264,7 +264,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 all_betas_tidy %>%
   dplyr::filter(regressor_name == "RHit") %>%
   dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
-  dplyr::group_by(hemi, roi_lbl, beta_seq) %>%
+  dplyr::group_by(hemi, roi_lbl, beta_seq, regressor_name) %>%
   dplyr::filter(hemi == "ashs_left") %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
@@ -272,12 +272,13 @@ all_betas_tidy %>%
                    min_val = gmean_beta_val - sem_beta_val,
                    max_val = gmean_beta_val + sem_beta_val) %>%
   ggplot2::ggplot(ggplot2::aes(x = beta_seq, y = gmean_beta_val, color = roi_lbl)) +
-  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = regressor_name, fill = regressor_name), alpha = 0.2) +
+  ggplot2::geom_ribbon(ggplot2::aes(ymin = min_val, ymax = max_val, color = roi_lbl, fill = roi_lbl), alpha = 0.2) +
   ggplot2::geom_line() +
   ggplot2::facet_grid(.~roi_lbl)  +
   ggplot2::ylab("mean beta value") +
   ggplot2::xlab("FIR timepoint") +
-  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
+  ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) + # this is determined by the order of the FIR
+  ggplot2::theme(legend.position = "none")
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = file.path(graph_fpath_out,
