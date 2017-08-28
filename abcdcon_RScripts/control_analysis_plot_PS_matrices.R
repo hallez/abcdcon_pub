@@ -55,7 +55,7 @@ tidy_trials <- all_trials_z_better_names %>%
                 roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
   dplyr::select(-z_r)
 
-#' # Loop and create plots
+#' # Loop and create plots w/ `ggcorr`
 subjects <- unique(tidy_trials$subj)
 nsub <- length(subjects)
 conditions <- unique(tidy_trials$condition)
@@ -63,14 +63,61 @@ ncond <- length(conditions)
 rois <- unique(tidy_trials$roi)
 nroi <- length(rois)
 
+#' # Define `multiplot` function
+# this is from: http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+  if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
 
 for(iroi in 1:nroi){
-  # re-set plot layout for each ROI
-  par(new = TRUE)
-  par(mfrow=c(nsub, ncond))
-
-  for(isubj in 1:nsub){
-    for(icond in 1:ncond){
+  for(icond in 1:ncond){
+    for(isubj in 1:nsub){
+      # right now, save out all plots for a given condition together
+      # based on: https://stackoverflow.com/questions/31993704/storing-ggplot-objects-in-a-list-from-within-loop-in-r
+      myplots <- list()
 
       cur_subj <- subjects[isubj]
       cur_cond <- conditions[icond]
@@ -85,12 +132,32 @@ for(iroi in 1:nroi){
         tidyr::spread(col_name, r) %>%
         dplyr::select(-subj, -roi, -hemi, -condition, -row_name)
 
-      # TODO: format plots so subjects are in columns and conditions are in rows. save out separate files for each ROI
-      cur_plot <- GGally::ggcorr(cur_dat_fmt, size = 0, legend.position = "none")
-      print(cur_plot)
-    } #icond
-  } #isubj
+      myplots[[isubj]] <- GGally::ggcorr(cur_dat_fmt, size = 0, legend.position = "none") +
+        ggplot2::ggtitle(cur_subj) +
+        ggplot2::theme_dark()
 
-  # save out before going onto next ROI
+    } #isubj
+    p <- multiplot(plotlist = myplots, cols = 2)
+    if(SAVE_GRAPHS_FLAG == 1){
+      ggplot2::ggsave(file = file.path(graph_fpath_out, sprintf('%s_%s_PS_all_subj.pdf', cur_cond, cur_roi)),
+                      plot = p)
+    }
+
+  } #icond
 } #iroi
 
+
+#' # Use `ggplot2::geom_tile` for plotting
+# based on: http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
+tidy_trials %>%
+  dplyr::filter(hemi == "left",
+                roi == "CA1_body",
+                condition == "diffVideo_diffHouse") %>%
+  ggplot2::ggplot(ggplot2::aes(x = row_name, y = col_name, fill = r)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white",
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Pearson\nCorrelation") +
+  ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                 axis.text.y = ggplot2::element_blank()) +
+  ggplot2::facet_grid(subj ~ ., scales = "free")
