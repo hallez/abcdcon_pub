@@ -14,6 +14,7 @@
 
 #+ initialize, warning = FALSE, message = FALSE
 devtools::load_all()
+devtools::install_github("rlbarter/superheat")
 
 # add dplyr with library()
 # NB: this is non-standard
@@ -55,7 +56,7 @@ tidy_trials <- all_trials_z_better_names %>%
                 roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
   dplyr::select(-z_r)
 
-#' # Loop and create plots w/ `ggcorr`
+#' # Setup variables needed for plotting loop
 subjects <- unique(tidy_trials$subj)
 nsub <- length(subjects)
 conditions <- unique(tidy_trials$condition)
@@ -111,14 +112,14 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
-
+#' # Loop through and plot
 for(iroi in 1:nroi){
   for(icond in 1:ncond){
-    for(isubj in 1:nsub){
-      # right now, save out all plots for a given condition together
-      # based on: https://stackoverflow.com/questions/31993704/storing-ggplot-objects-in-a-list-from-within-loop-in-r
-      myplots <- list()
+    # right now, save out all plots for a given condition together
+    # based on: https://stackoverflow.com/questions/31993704/storing-ggplot-objects-in-a-list-from-within-loop-in-r
+    myplots <- list()
 
+    for(isubj in 1:nsub){
       cur_subj <- subjects[isubj]
       cur_cond <- conditions[icond]
       cur_roi <- rois[iroi]
@@ -132,15 +133,40 @@ for(iroi in 1:nroi){
         tidyr::spread(col_name, r) %>%
         dplyr::select(-subj, -roi, -hemi, -condition, -row_name)
 
-      myplots[[isubj]] <- GGally::ggcorr(cur_dat_fmt, size = 0, legend.position = "none") +
-        ggplot2::ggtitle(cur_subj) +
-        ggplot2::theme_dark()
+      myplots[[isubj]] <- GGally::ggcorr(cur_dat_fmt, size = 0,
+                                         legend.position = "none",
+                                         low = "#998ec3",
+                                         mid = "#f7f7f7",
+                                         high = "#f1a340")
+
+      if(SAVE_GRAPHS_FLAG == 1){
+        ggplot2::ggsave(file = file.path(graph_fpath_out, sprintf('%s_%s_%s_PS_left-hemi.pdf', cur_subj, cur_cond, cur_roi)),
+                        height = 5, width = 5)
+      }
+
+      # also plot a heatmap version
+      # if want to match colors to `ggcorr` - heat.pal = c("#998ec3", "white", "#f1a340")
+      lower_dat <- cur_dat_fmt
+      lower_dat[lower.tri(lower_dat)] <- NA
+      p <- superheat::superheat(lower_dat,
+                           legend = FALSE,
+                           left.label = "none",
+                           bottom.label = "none",
+                           heat.na.col = "white")
+      if(SAVE_GRAPHS_FLAG == 1){
+        png(file.path(graph_fpath_out, sprintf('%s_%s_%s_PS_left-hemi_superheat.png', cur_subj, cur_cond, cur_roi)), height = 900, width = 800)
+        superheat(X = lower_dat, scale = F)
+        dev.off()
+      }
 
     } #isubj
-    p <- multiplot(plotlist = myplots, cols = 2)
+
+    # in order to save a multiplot, need to have the file device that will be saving to open
+    # based on: https://stackoverflow.com/questions/11721401/r-save-multiplot-to-file
     if(SAVE_GRAPHS_FLAG == 1){
-      ggplot2::ggsave(file = file.path(graph_fpath_out, sprintf('%s_%s_PS_all_subj.pdf', cur_cond, cur_roi)),
-                      plot = p)
+      pdf(file.path(graph_fpath_out, sprintf('%s_%s_PS_left-hemi_all_subj.pdf', cur_cond, cur_roi)))
+      multiplot(plotlist = myplots, cols = 2)
+      dev.off()
     }
 
   } #icond
@@ -150,6 +176,9 @@ for(iroi in 1:nroi){
 #' # Use `ggplot2::geom_tile` for plotting
 # based on: http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
 tidy_trials %>%
+  # this seems like it doesn't work, but it's just struggling w/ the scaling across so many subjects
+  # uncomment this out to see it work:
+  # dplyr::filter(subj %in% c("s001", "s002", "s018") %>%
   dplyr::filter(hemi == "left",
                 roi == "CA1_body",
                 condition == "diffVideo_diffHouse") %>%
