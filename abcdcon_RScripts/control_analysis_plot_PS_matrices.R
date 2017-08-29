@@ -44,8 +44,127 @@ dir.create(graph_fpath_out) # will throw an error if this already exists
 #' ### Flags
 SAVE_GRAPHS_FLAG <-1
 
-#+ label="Load data"
-#' ## Load in PS data
+#' ### Variables needed for plotting loop
+subjects <- c("s001", "s002", "s006", "s007", "s008", "s009", "s010",
+              "s011", "s012", "s013", "s014", "s018", "s019", "s020",
+              "s021", "s023", "s024", "s025", "s026", "s027", "s028", "s029", "s030")
+nsub <- length(subjects)
+conditions <- c("diffVideo_diffHouse", "sameVideo_sameHouse", "diffVideo_sameHouse")
+ncond <- length(conditions)
+rois <- c("CA1_body", "CA2_3_DG_body")
+nroi <- length(rois)
+
+#' # Load in square matrices
+# based on `pattern_similarity_no_outlier_trials_load_data_btwn_runs.R`
+for(isubj in 1:nsub){
+  for(iroi in 1:nroi){
+    cur_subj <- subjects[isubj]
+    cur_roi <- rois[iroi]
+
+    cur_file <- file.path(analyzed_mri_dir, cur_subj, "ROIs",
+                          "ashs_left", sprintf('br%s_pattern_corr_no_outlier_trials_all_runs.mat',cur_roi))
+
+    if(file.exists(cur_file)){
+      # read in the subject's data for the current ROI
+      subj_pattern_corr <- data.matrix(as.data.frame(R.matlab::readMat(cur_file)))
+
+      # also read in the labels for the current trials
+      subj_pattern_ids <- as.data.frame(R.matlab::readMat(file.path(analyzed_mri_dir, cur_subj, "ROIs",
+                                                                    "ashs_left", sprintf('br%s_pattern_mtx_ids_no_outlier_trials_all_runs.mat',cur_roi))))
+
+      # --- format labels so can filter trials ---
+      # TODO: figure out why this throws an error (even though output seems reasonable)
+      subj_pattern_ids_tidy <- subj_pattern_ids %>%
+        tidyr::gather() %>%
+        # also split out trial information into separate columns so can easily filter/find indices
+        # NB: will get a warning that there are `too many values`, but still separates correctly (I think this is b/c there are multiple fiels for `sep`)
+        tidyr::separate(value, into = c("run_trialnum", "trial_lbl"), sep = "Brown|Gray|CR|Miss|FA|Exclude", remove = FALSE) %>%
+        dplyr::mutate(runID_trialID = gsub("(^Run)_([01234]*)_(Trial)_([0123456789]*)_", "\\1\\2_\\3\\4", run_trialnum)) %>%
+        dplyr::select(-trial_lbl) %>%
+        # now pull out trial type information
+        tidyr::separate(value, into = c("runlbl", "run_num", "triallbl", "trial_num", "norun_notrial"), sep = "_", remove = FALSE, extra = "merge") %>%
+        tidyr::separate(norun_notrial, into = c("norun_notrial_novideo", "video_id"), sep = "EncVideo_", remove = FALSE, extra = "merge") %>%
+        tidyr::separate(norun_notrial_novideo, into = c("other_mem_resp", "sep2"), sep = "Brown|Gray", remove = FALSE, extra = "merge") %>%
+        tidyr::separate(sep2, into = c("memresp_HI", "memresp_HC"), sep = "Rm1_|Rm2_", remove = FALSE, extra = "merge") %>%
+        tidyr::separate(memresp_HC, into = c("memresp_only_HC", "sourceresp_only_HC"), sep = "_", remove = FALSE, extra = "merge") %>%
+        # ok, now start combining this information so can easily sort trials
+        # item memory
+        dplyr::mutate(memresp = ifelse((other_mem_resp!=""), gsub("_", "", other_mem_resp), # NB - this means that false alarms will be `FAF` or `FAR`
+                                       ifelse(memresp_HI!="", gsub("_(RHit|FHit)_HI_", "\\1", memresp_HI),
+                                              ifelse(!is.na(memresp_only_HC), memresp_only_HC, "999")))) %>%
+        dplyr::mutate(memresp_fact = factor(memresp, levels = c("RHit", "FHit", "CR", "FAF", "FAR", "Miss", "ExcludeTrial"))) %>%
+        # source memory
+        dplyr::mutate(sourceresp = ifelse(video_id == "Lure", NA,
+                                          ifelse(memresp_HI!="", gsub("_(RHit|FHit)_(HI)_", "\\2", memresp_HI),
+                                                 ifelse(!is.na(sourceresp_only_HC), gsub("_","",sourceresp_only_HC), "999")))) %>%
+        # now, create indices for trials that were included in PS
+        # remember, this was limited to RHit trials where the house was correctly identified
+        dplyr::mutate(mem_PSinclude = ifelse(memresp == "RHit", "yes", "no"),
+                      source_PSinclude = ifelse(is.na(sourceresp), "no",
+                                                ifelse(sourceresp == "HCRC", "yes",
+                                                       ifelse(sourceresp == "HCRI", "yes", "no"))),
+                      PS_include = ifelse((mem_PSinclude == "yes" & source_PSinclude == "yes"), "yes", "no"))
+
+      exclude_indices <- which(subj_pattern_ids_tidy$PS_include == "no")
+
+      # --- capitalize on the power of R and give the pattern matrix meaningful row and column names ---
+      colnames(subj_pattern_corr) <- subj_pattern_ids_tidy$value
+      rownames(subj_pattern_corr) <- subj_pattern_ids_tidy$value
+
+      # --- notch out w/in run autocorrelation ---
+      # graphical check: only the NaN-ed out trials should be gray
+      # ggplot2::ggplot(reshape2::melt(subj_pattern_corr), ggplot2::aes(Var2, Var1, fill = value)) +
+      #   ggplot2::geom_tile() +
+      #   ggplot2::theme(axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
+      subj_pattern_corr_no_auto_corr <- subj_pattern_corr
+      subj_pattern_corr_no_auto_corr[grep("Run[_]01",rownames(subj_pattern_corr_no_auto_corr)),
+                                     grep("Run[_]01",colnames(subj_pattern_corr_no_auto_corr))] <- NA
+      subj_pattern_corr_no_auto_corr[grep("Run[_]02",rownames(subj_pattern_corr_no_auto_corr)),
+                                     grep("Run[_]02",colnames(subj_pattern_corr_no_auto_corr))] <- NA
+      subj_pattern_corr_no_auto_corr[grep("Run[_]03",rownames(subj_pattern_corr_no_auto_corr)),
+                                     grep("Run[_]03",colnames(subj_pattern_corr_no_auto_corr))] <- NA
+      subj_pattern_corr_no_auto_corr[grep("Run[_]04",rownames(subj_pattern_corr_no_auto_corr)),
+                                     grep("Run[_]04",colnames(subj_pattern_corr_no_auto_corr))] <- NA
+      # graphical check: now should have gray boxes for each run (where previously could see higher correlations)
+      # ggplot2::ggplot(reshape2::melt(subj_pattern_corr_no_auto_corr), ggplot2::aes(Var2, Var1, fill = value)) +
+      #   ggplot2::geom_tile() +
+      #   ggplot2::theme(axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
+
+      # --- notch out trials not included in PS analyses ---
+      subj_pattern_corr_PS_trials_only <- subj_pattern_corr_no_auto_corr
+      subj_pattern_corr_PS_trials_only[exclude_indices, ] <- NA
+      subj_pattern_corr_PS_trials_only[,exclude_indices] <- NA
+      # graphical check: now should have gray rows and columns for trials not included in PS analyses
+      # ggplot2::ggplot(reshape2::melt(subj_pattern_corr_PS_trials_only), ggplot2::aes(Var2, Var1, fill = value)) +
+      #   ggplot2::geom_tile() +
+      #   ggplot2::theme(axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
+
+      # --- notch out upper half of symmetric matrix ---
+      subj_pattern_corr_lower <- subj_pattern_corr_PS_trials_only
+      subj_pattern_corr_lower[lower.tri(subj_pattern_corr_lower)] <- NA
+      # graphical check: top of matrix should now all be gray
+      # ggplot2::ggplot(reshape2::melt(subj_pattern_corr_lower), ggplot2::aes(Var2, Var1, fill = value)) +
+      #   ggplot2::geom_tile() +
+      #   ggplot2::theme(axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
+
+      # --- make pretty plots ---
+      if(SAVE_GRAPHS_FLAG == 1){
+        png(file.path(graph_fpath_out, sprintf('%s_all-cond_%s_PS_left-hemi_superheat.png', cur_subj, cur_roi)), height = 800, width = 800)
+        # can't save plot to a variable b/c it's a list so just graph it while the `png` saver is listening
+        superheat::superheat(X = subj_pattern_corr_lower,
+                             legend = FALSE,
+                             left.label = "none",
+                             bottom.label = "none",
+                             heat.na.col = "white",
+                             heat.lim = c(-1, 1))
+        dev.off()
+      }
+
+    } #file.exists
+  } #iroi
+} #isubj
+
+#' # Load in PS data
 # this file is saved out in `mixed_models.R`
 load(paste0(analyzed_mri_dir, 'group_z_renamed_spatial_temporal_PS_by_trial.RData'))
 
@@ -55,14 +174,6 @@ tidy_trials <- all_trials_z_better_names %>%
                 condition %in% c("diffVideo_diffHouse", "sameVideo_sameHouse", "diffVideo_sameHouse"),
                 roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
   dplyr::select(-z_r)
-
-#' # Setup variables needed for plotting loop
-subjects <- unique(tidy_trials$subj)
-nsub <- length(subjects)
-conditions <- unique(tidy_trials$condition)
-ncond <- length(conditions)
-rois <- unique(tidy_trials$roi)
-nroi <- length(rois)
 
 #' # Define `multiplot` function
 # this is from: http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
@@ -124,6 +235,7 @@ for(iroi in 1:nroi){
       cur_cond <- conditions[icond]
       cur_roi <- rois[iroi]
 
+      # --- plot just the current condition's trial pairs ---
       cur_dat <- tidy_trials %>%
         dplyr::filter(subj == cur_subj,
                       condition == cur_cond,
@@ -131,7 +243,10 @@ for(iroi in 1:nroi){
 
       cur_dat_fmt <- cur_dat %>%
         tidyr::spread(col_name, r) %>%
-        dplyr::select(-subj, -roi, -hemi, -condition, -row_name)
+        dplyr::select(-subj, -roi, -hemi, -condition) %>%
+        # based on: https://stackoverflow.com/questions/5555408/convert-the-values-in-a-column-into-row-names-in-an-existing-data-frame-in-r
+        tibble::remove_rownames() %>%
+        tibble::column_to_rownames(var = "row_name")
 
       myplots[[isubj]] <- GGally::ggcorr(cur_dat_fmt, size = 0,
                                          legend.position = "none",
@@ -148,17 +263,16 @@ for(iroi in 1:nroi){
       # if want to match colors to `ggcorr` - heat.pal = c("#998ec3", "white", "#f1a340")
       lower_dat <- cur_dat_fmt
       lower_dat[lower.tri(lower_dat)] <- NA
-      p <- superheat::superheat(lower_dat,
-                           legend = FALSE,
-                           left.label = "none",
-                           bottom.label = "none",
-                           heat.na.col = "white")
       if(SAVE_GRAPHS_FLAG == 1){
-        png(file.path(graph_fpath_out, sprintf('%s_%s_%s_PS_left-hemi_superheat.png', cur_subj, cur_cond, cur_roi)), height = 900, width = 800)
-        superheat(X = lower_dat, scale = F)
+        png(file.path(graph_fpath_out, sprintf('%s_%s_%s_PS_left-hemi_superheat.png', cur_subj, cur_cond, cur_roi)), height = 800, width = 800)
+        # can't save plot to a variable b/c it's a list so just graph it while the `png` saver is listening
+        superheat::superheat(X = lower_dat,
+                             legend = FALSE,
+                             left.label = "none",
+                             bottom.label = "none",
+                             heat.na.col = "white")
         dev.off()
       }
-
     } #isubj
 
     # in order to save a multiplot, need to have the file device that will be saving to open
@@ -172,7 +286,6 @@ for(iroi in 1:nroi){
   } #icond
 } #iroi
 
-
 #' # Use `ggplot2::geom_tile` for plotting
 # based on: http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
 tidy_trials %>%
@@ -183,8 +296,8 @@ tidy_trials %>%
                 roi == "CA1_body",
                 condition == "diffVideo_diffHouse") %>%
   ggplot2::ggplot(ggplot2::aes(x = row_name, y = col_name, fill = r)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white",
+  ggplot2::geom_tile(color = "white") +
+  ggplot2::scale_fill_gradient2(low = "blue", high = "red", mid = "white",
                        midpoint = 0, limit = c(-1,1), space = "Lab",
                        name="Pearson\nCorrelation") +
   ggplot2::theme(axis.text.x = ggplot2::element_blank(),
