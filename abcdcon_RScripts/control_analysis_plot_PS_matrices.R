@@ -23,6 +23,7 @@ devtools::install_github("rlbarter/superheat")
 # and use @importFrom dplyr "%>%",
 # but this is incompatible with getting in-line results with code in knitr output
 library(dplyr)
+library(superheat)
 
 #' # Setup
 #' ## Load config file
