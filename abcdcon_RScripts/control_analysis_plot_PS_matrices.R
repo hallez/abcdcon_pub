@@ -55,10 +55,63 @@ ncond <- length(conditions)
 rois <- c("CA1_body", "CA2_3_DG_body")
 nroi <- length(rois)
 
+#' # Define `multiplot` function
+# this is from: http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+  if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
 #' # Load in square matrices
 # based on `pattern_similarity_no_outlier_trials_load_data_btwn_runs.R`
-for(isubj in 1:nsub){
-  for(iroi in 1:nroi){
+for(iroi in 1:nroi){
+
+  # reset plotting between ROIs
+  allplots <- list()
+
+  for(isubj in 1:nsub){
+
     cur_subj <- subjects[isubj]
     cur_roi <- rois[iroi]
 
@@ -161,9 +214,21 @@ for(isubj in 1:nsub){
         dev.off()
       }
 
+      allplots[[i]] <- GGally::ggcorr(subj_pattern_corr_no_auto_corr, size = 0,
+                                      legend.position = "none",
+                                      low = "#998ec3",
+                                      mid = "#f7f7f7",
+                                      high = "#f1a340")
+
     } #file.exists
-  } #iroi
-} #isubj
+  } #isubj
+  # save out multiplot before going onto next ROI
+  if(SAVE_GRAPHS_FLAG == 1){
+    pdf(file.path(graph_fpath_out, sprintf('%s_PS_all-cond_left-hemi_all_subj.pdf', cur_roi)))
+    multiplot(plotlist = myplots, cols = 2)
+    dev.off()
+  }
+} #iroi
 
 #' # Load in PS data
 # this file is saved out in `mixed_models.R`
@@ -176,55 +241,7 @@ tidy_trials <- all_trials_z_better_names %>%
                 roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
   dplyr::select(-z_r)
 
-#' # Define `multiplot` function
-# this is from: http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
-# Multiple plot function
-#
-# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
-# - cols:   Number of columns in layout
-# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
-#
-# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-# then plot 1 will go in the upper left, 2 will go in the upper right, and
-# 3 will go all the way across the bottom.
-#
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
-
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-
-  numPlots = length(plots)
-
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-
-  if (numPlots==1) {
-    print(plots[[1]])
-
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-
-#' # Loop through and plot
+#' ## Loop through and plot from PS data
 for(iroi in 1:nroi){
   for(icond in 1:ncond){
     # right now, save out all plots for a given condition together
