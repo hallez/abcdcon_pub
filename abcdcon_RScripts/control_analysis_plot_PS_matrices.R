@@ -214,18 +214,19 @@ for(iroi in 1:nroi){
         dev.off()
       }
 
-      allplots[[i]] <- GGally::ggcorr(subj_pattern_corr_no_auto_corr, size = 0,
+      allplots[[isubj]] <- GGally::ggcorr(subj_pattern_corr_no_auto_corr, size = 0,
                                       legend.position = "none",
                                       low = "#998ec3",
                                       mid = "#f7f7f7",
-                                      high = "#f1a340")
+                                      high = "#f1a340") +
+        ggplot2::ggtitle(cur_subj)
 
     } #file.exists
   } #isubj
   # save out multiplot before going onto next ROI
   if(SAVE_GRAPHS_FLAG == 1){
     pdf(file.path(graph_fpath_out, sprintf('%s_PS_all-cond_left-hemi_all_subj.pdf', cur_roi)))
-    multiplot(plotlist = myplots, cols = 2)
+    multiplot(plotlist = allplots, cols = 3)
     dev.off()
   }
 } #iroi
