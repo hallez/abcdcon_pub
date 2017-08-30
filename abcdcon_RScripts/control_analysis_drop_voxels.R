@@ -77,6 +77,7 @@ for(idir in c(1:length(roi_dirs))) {
         # --- read in the subject's data for the current ROI ---
         subj_pattern_mtx <- data.matrix(as.data.frame(R.matlab::readMat(cur_file)))
 
+        # OPTION 1: select largest voxels
         # --- take abs value ---
         #  we assume that direction is essentially meaningless when not compared to a baseline
         abs_mtx <- subj_pattern_mtx %>%
@@ -104,6 +105,29 @@ for(idir in c(1:length(roi_dirs))) {
 
         # ---   save out voxels to exclude ---
         write.table(exclude_vox_ids, file = file.path(analyzed_mri_dir, subj_number, sprintf("%s_%s_top_%s_voxels.csv", hemi_label, cur_roi, num_vox)), row.names=FALSE, col.names = FALSE, sep = ",")
+
+        # OPTION 2: select most variable voxels
+        # --- find SD of each voxel across time ---
+        sd_mtx <- subj_pattern_mtx %>%
+          as.data.frame() %>%
+          tibble::rowid_to_column(., "voxel_number") %>%
+          # have multiple rows per voxel (ie, long data instead of wide)
+          tidyr::gather(key = timepoint_id, value = timepoint_value, -voxel_number) %>%
+          # group by voxel ID
+          dplyr::group_by(voxel_number) %>%
+          # take SD for each voxel
+          dplyr::summarise(sd_vox_val = sd(timepoint_value, na.rm = TRUE))
+
+        # --- rank by SD ---
+        rank_sds <- sd_mtx %>%
+          dplyr::top_n(n = num_vox, wt = sd_vox_val)
+
+        exclude_sd_vox_ids <- rank_sds$voxel_number
+
+        # --- save out voxels to exclude ---
+        write.table(exclude_sd_vox_ids, file = file.path(analyzed_mri_dir, subj_number, sprintf("%s_%s_top_%s_voxels_by_SD.csv", hemi_label, cur_roi, num_vox)), row.names=FALSE, col.names = FALSE, sep = ",")
+
+        # TODO: FIGURE OUT WAY TO QUANTIFY OVERLAP IN THESE TWO APPROACHES
 
       } else {
         print(sprintf("Current pattern matrix file %s does not exist. Continuing on.", cur_file))

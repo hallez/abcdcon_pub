@@ -85,4 +85,4 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
   1. Identify influential voxels: `control_analysis_drop_voxels.R`
   1. Remove these voxels from pattern matrices: `control_analysis_remove_top_voxels.m`
   1. Re-compute PS without these voxels: `control_analysis_PS_truncated_voxels.R`
-  1. Run stats: (**still need to create this file; use `mixed_models.R` as a base**)
+  1. Run stats: `control_analysis_PS_truncated_voxels_mixed_models.R`
