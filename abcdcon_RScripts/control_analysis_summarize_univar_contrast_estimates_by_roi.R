@@ -94,19 +94,19 @@ if(file.exists(contrast_est_fpath)){
                      sem=sd(value)/sqrt(length(value)),
                      lower = activity - sem,
                      upper = activity + sem) %>%
-    dplyr::filter(roi_file=="rCA1_body" | roi_file=="rCA2_3_DG_body" | roi_file=="rwhole_hippo",
+    dplyr::filter(roi_file=="rCA1_body" | roi_file=="rCA2_3_DG_body",
                   condition %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
                   hemi == "ashs_left") %>%
     # re-label to pretty up plotting
-    dplyr::mutate(roi_lbl = car::recode(roi_file, "'rCA1_body' = 'CA1_body'; 'rCA2_3_DG_body' = 'CA2_3_DG_body'; 'rwhole_hippo' = 'HC'"),
-                  condition_lbl = car::recode(condition, "'brownRHitsxFHits_Miss' = 'brown house'; 'grayRHitsxFHits_Miss' = 'gray house'")) %>%
-    ggplot2::ggplot(ggplot2::aes(roi_lbl, activity, fill=roi_lbl)) +
+    dplyr::mutate(roi_lbl = car::recode(roi_file, "'rCA1_body' = 'left CA1'; 'rCA2_3_DG_body' = 'left CA23DG'"),
+                  condition_lbl = car::recode(condition, "'brownRHitsxFHits_Miss' = 'Brown House'; 'grayRHitsxFHits_Miss' = 'Gray House'")) %>%
+    ggplot2::ggplot(ggplot2::aes(condition_lbl, activity, fill=condition_lbl)) +
     ggplot2::geom_bar(width=0.7,position=ggplot2::position_dodge(0.9),stat="identity") +
-    ggplot2::facet_grid(.~condition_lbl) +
-    ggplot2::ylab("mean univariate activity") +
+    ggplot2::facet_grid(.~roi_lbl) +
+    ggplot2::ylab("Mean Univariate Activity") +
     ggplot2::geom_errorbar(ggplot2::aes(ymin=lower,ymax=upper),position=ggplot2::position_dodge(width=0.9),color="black",width=0.15) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, color = "black"), axis.title.x = ggplot2::element_blank(),
-                   strip.text.x = ggplot2::element_text(size = 20),
+                   strip.text.x = ggplot2::element_text(size = 17),
                    axis.text.y = ggplot2::element_text(size = 10), axis.title.y = ggplot2::element_text(size = 20),
                    strip.text.y = ggplot2::element_text(size = 20),
                    legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_blank(),
