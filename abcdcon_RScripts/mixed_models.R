@@ -477,8 +477,7 @@ if(SAVE_GRAPHS_FLAG == 1){
 #' # Plot right (Supplemental)
 all_trials_body %>%
   dplyr::filter(condition != "anyVideo_sameHouse") %>%
-  dplyr::filter(hemi == "right") %>%
-  dplyr::mutate(roi_by_hemi = gsub("(.*?)_body", "right \\1", roi)) %>%
+  dplyr::mutate(roi_by_hemi = gsub("(.*?)_body", "\\1", roi)) %>%
   dplyr::mutate(roi_trimmed = sub("_(3)_", "\\1", roi_by_hemi)) %>%
   dplyr::group_by(roi_trimmed, hemi, condition) %>%
   dplyr::summarise(mean = mean(r),
@@ -495,7 +494,7 @@ all_trials_body %>%
   dplyr::mutate(condition_breaks = gsub("  ", "\n", condition_renamed_ordered)) %>%
   ggplot2::ggplot(ggplot2::aes(x = condition_breaks, y = mean, fill = condition_breaks)) +
   ggplot2::geom_bar(stat = "identity") +
-  ggplot2::facet_grid(. ~ roi_trimmed) +
+  ggplot2::facet_grid(roi_trimmed ~ hemi) +
   # to match colors from method figure:
   # "#CC6633" = orange (diff video, diff house)
   # "#CC6699" = fuscia (same video, same house)
@@ -519,7 +518,7 @@ if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = paste0(dropbox_dir,
                                 halle::ensure_trailing_slash("writeups"),
                                 halle::ensure_trailing_slash("figures"),
-                                "sameAll_sameSome_diffAll_right_body_CA1_CA23DG.pdf"),
+                                "sameAll_sameSome_diffAll_both-hemi_body_CA1_CA23DG.pdf"),
                   width=8, height=6)
 }
 
