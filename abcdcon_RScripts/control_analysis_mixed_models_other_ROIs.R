@@ -518,8 +518,8 @@ dplyr::filter(condition != "anyVideo_sameHouse") %>%
   dplyr::mutate(condition_ordered = factor(condition, levels = c("sameVideo_sameHouse", "diffVideo_sameHouse", "diffVideo_diffHouse"))) %>%
   # put one space between same/diff and video/house and TWO spaces between where we'll want a line break
   # this will help `gsub` only create 2 lines for each condition name rather than 4 lines
-  dplyr::mutate(condition_renamed = car::recode(condition_ordered, "'diffVideo_sameHouse' = 'different video  same house'; 'diffVideo_diffHouse' = 'different video  different house' ; 'sameVideo_sameHouse' = 'same video  same house'")) %>%
-  dplyr::mutate(condition_renamed_ordered = factor(condition_renamed, levels = c("same video  same house", "different video  same house", "different video  different house"))) %>%
+  dplyr::mutate(condition_renamed = car::recode(condition_ordered, "'diffVideo_sameHouse' = 'Different Video  Same House'; 'diffVideo_diffHouse' = 'Different Video  Different House' ; 'sameVideo_sameHouse' = 'Same Video  Same House'")) %>%
+  dplyr::mutate(condition_renamed_ordered = factor(condition_renamed, levels = c("Same Video  Same House", "Different Video  Same House", "Different Video  Different House"))) %>%
   # based on https://www.r-bloggers.com/line-breaks-between-words-in-axis-labels-in-ggplot-in-r/
   dplyr::mutate(condition_breaks = gsub("  ", "\n", condition_renamed_ordered)) %>%
   ggplot2::ggplot(ggplot2::aes(x = condition_breaks, y = mean, fill = condition_breaks))  +
@@ -535,12 +535,13 @@ dplyr::filter(condition != "anyVideo_sameHouse") %>%
                                       width=0.10)) +
   ggplot2::ggtitle("Neural pattern similarity for spatial and episodic contexts") +
   ggplot2::ylab("Mean Pattern Similarity (r)") +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(size = 9, color = "black"), axis.title.x = ggplot2::element_blank(),
+  ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, color = "black"), axis.title.x = ggplot2::element_blank(),
                  strip.text.x = ggplot2::element_text(size = 20),
                  axis.text.y = ggplot2::element_text(size = 10), axis.title.y = ggplot2::element_text(size = 20),
                  strip.text.y = ggplot2::element_text(size = 20),
                  legend.title = ggplot2::element_blank(), legend.text = ggplot2::element_blank(),
-                 plot.title = ggplot2::element_blank()) +
+                 plot.title = ggplot2::element_blank(),
+                 strip.background = ggplot2::element_blank()) +
   ggplot2::theme(legend.position = "none")
 
 ggplot2::ggsave(file = paste0(dropbox_dir,
