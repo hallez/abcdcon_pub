@@ -80,9 +80,13 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
 9. Analyze using mixed models with `mixed_models.R`
 
 ## Control analyses 
+1. Use FIR to estimate shape of univariate response in each subfield (Supplemental Figure X):
+  1. (matlab scripts here)
+  1. Plot the data: `control_analysis_FIR_to_GLM_plot_betas.R`
 1. Randomly select trials so that all conditions have equal bin sizes: `control_analysis_matched_trial_numbers.R`
 1. Remove voxels of influence:
   1. Identify influential voxels: `control_analysis_drop_voxels.R`
   1. Remove these voxels from pattern matrices: `control_analysis_remove_top_voxels.m`
   1. Re-compute PS without these voxels: `control_analysis_PS_truncated_voxels.R`
   1. Run stats: `control_analysis_PS_truncated_voxels_mixed_models.R`
+
