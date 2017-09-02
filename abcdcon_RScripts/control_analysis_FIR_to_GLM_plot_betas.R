@@ -310,11 +310,13 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=8, height=6)
 }
 
-#' ### R, FHitANDMiss: left hemi, shaded error bars
+#' ### R, FHitANDMiss: left hemi, shaded error bars (Supplemental Figure)
 all_betas_tidy %>%
   dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
   dplyr::filter(roi_lbl %in% c("CA1", "CA23DG")) %>%
   dplyr::filter(hemi == "ashs_left") %>%
+  # reorder so RHit regressor is first
+  dplyr::mutate(regressor_name = factor(regressor_name, levels = c("RHit", "FHitsANDMisses"))) %>%
   dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
@@ -328,7 +330,6 @@ all_betas_tidy %>%
   ggplot2::ylab("mean beta value") +
   ggplot2::xlab("FIR timepoint") +
   ggplot2::scale_x_continuous(breaks = c(1:10), labels = c(1:10)) # this is determined by the order of the FIR
-
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = file.path(graph_fpath_out,
@@ -336,11 +337,12 @@ if(SAVE_GRAPHS_FLAG == 1){
                   width=7, height=6)
 }
 
-#' ### R, FHitANDMiss: left hemi, shaded error bars, CA1/CA23DG (body) and HC
+#' ### R, FHitANDMiss: left hemi, shaded error bars, just HC
 all_betas_tidy %>%
   dplyr::filter(regressor_name %in% c("RHit", "FHitsANDMisses")) %>%
-  dplyr::filter(roi_lbl %in% c("CA1", "CA23DG", "HC")) %>%
+  dplyr::filter(roi_lbl %in% c("HC")) %>%
   dplyr::filter(hemi == "ashs_left") %>%
+  dplyr::mutate(regressor_name = factor(regressor_name, levels = c("RHit", "FHitsANDMisses"))) %>%
   dplyr::group_by(roi_lbl, beta_seq, regressor_name) %>%
   dplyr::summarise(gmean_beta_val = mean(mean_beta_val, na.rm = TRUE),
                    num_obs = length(mean_beta_val), # should be 8 if the subject had one of each trial type per run
@@ -357,7 +359,7 @@ all_betas_tidy %>%
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(file = file.path(graph_fpath_out,
-                                "FIR_betas_RHitsVSFhitsMiss_geomline_left-hemi_shaded-errorbars_inclHC.pdf"),
+                                "FIR_betas_RHitsVSFhitsMiss_geomline_left-hemi_justHC.pdf"),
                   width=7, height=6)
 }
 

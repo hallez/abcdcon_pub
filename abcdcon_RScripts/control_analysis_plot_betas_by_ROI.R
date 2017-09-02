@@ -171,10 +171,15 @@ for(iroi in 1:length(ROIs)){
 #' ## Overlay distibutions for CA1 and CA23DG (body)
 all_betas_tidy %>%
   dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body")) %>%
-  ggplot2::ggplot(ggplot2::aes(cur.mean, fill = roi_lbl)) +
-  ggplot2::geom_histogram(breaks = seq(min_val, max_val, by = 2)) +
-  ggplot2::facet_grid(subj_id ~ hemi_lbl) +
-  ggplot2::xlab("mean beta values") +
+  ggplot2::ggplot(ggplot2::aes(cur.mean, color = roi_lbl, fill = roi_lbl)) +
+  #ggplot2::geom_histogram(breaks = seq(min_val, max_val, by = 2)) +
+  # ggplot2::geom_boxplot(ggplot2::aes(y = cur.mean)) +
+  ggplot2::geom_violin(ggplot2::aes(y = cur.mean), alpha = 0.6) +
+  ggplot2::facet_grid(subj_id ~ hemi) +
+  ggplot2::scale_fill_manual(values = c("#c6dbef", "#ffffcc")) +
+  ggplot2::scale_color_manual(values = c("#084594", "#fd8d3c")) +
+  ggplot2::xlab("count of mean beta values") +
+  ggplot2::ylab("mean beta value") +
   ggplot2::ggtitle("Distribution of beta values") +
   ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
                  strip.text.x = ggplot2::element_text(size = 15),
