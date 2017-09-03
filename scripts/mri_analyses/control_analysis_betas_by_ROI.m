@@ -19,7 +19,7 @@ roi_names = {'brCA2_3_DG_body', 'brCA1_body',...
 num_rois = length(roi_names);
 
 % plotting setup
-plots_dir = fullfile(dropbox_dir, 'writeups', 'figures');
+plots_dir = fullfile(dropbox_dir, 'writeups', 'figures', 'plot-beta-distributions');
 
 % let's time to see how long this takes
 all_subjects_timer = tic;

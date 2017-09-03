@@ -35,7 +35,8 @@ analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(confi
 dropbox_dir <- halle::ensure_trailing_slash(config$directories$dropbox_abcdcon)
 graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
                           halle::ensure_trailing_slash("writeups"),
-                          halle::ensure_trailing_slash("figures"))
+                          halle::ensure_trailing_slash("figures"),
+                          halle::ensure_trailing_slash("plot-beta-distributions"))
 
 #' ## Setup other variables
 #' ### Flags
@@ -63,6 +64,7 @@ for(isubj in 1:length(subj_formatted)){
     for(iroi in 1:length(ROIs)){
       cur_roi <- ROIs[iroi]
 
+      # this file is created by `control_analysis_betas_by_ROI.m`
       cur_betas_fpath <- file.path(graph_fpath_out, sprintf('%s_%s_%s_means.mat', cur_subj, cur_hemi, cur_roi))
 
       if(file.exists(cur_betas_fpath)){
