@@ -172,23 +172,21 @@ for(iroi in 1:length(ROIs)){
 
 #' ## Overlay distibutions for CA1 and CA23DG (body)
 all_betas_tidy %>%
-  dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body")) %>%
-  ggplot2::ggplot(ggplot2::aes(cur.mean, color = roi_lbl, fill = roi_lbl)) +
-  #ggplot2::geom_histogram(breaks = seq(min_val, max_val, by = 2)) +
-  # ggplot2::geom_boxplot(ggplot2::aes(y = cur.mean)) +
-  ggplot2::geom_violin(ggplot2::aes(y = cur.mean), alpha = 0.6) +
-  ggplot2::facet_grid(subj_id ~ hemi) +
+  dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body"),
+                hemi == "ashs_left") %>%
+  ggplot2::ggplot(ggplot2::aes(color = roi_lbl, fill = roi_lbl)) +
+  ggplot2::geom_violin(ggplot2::aes(x = roi_lbl, y = cur.mean), alpha = 0.6) +
+  ggplot2::facet_grid(subj_id ~ .) +
   ggplot2::scale_fill_manual(values = c("#c6dbef", "#ffffcc")) +
   ggplot2::scale_color_manual(values = c("#084594", "#fd8d3c")) +
-  ggplot2::xlab("count of mean beta values") +
-  ggplot2::ylab("mean beta value") +
-  ggplot2::ggtitle("Distribution of beta values") +
+  ggplot2::ylab("Beta Value") +
   ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
-                 strip.text.x = ggplot2::element_text(size = 15),
-                 axis.text.y = ggplot2::element_text(size = 8))
+                 axis.text.x = ggplot2::element_text(size = 15), axis.title.x = ggplot2::element_blank(),
+                 axis.text.y = ggplot2::element_text(size = 8),
+                 legend.position = "none")
 
 if(SAVE_GRAPHS_FLAG == 1){
-  ggplot2::ggsave(filename = file.path(graph_fpath_out, 'all_subj_mean_beta_hist-overlap_CA1body-CA23DGbody.pdf'),
+  ggplot2::ggsave(filename = file.path(graph_fpath_out, 'all_subj_mean_beta_violin_CA1body-CA23DGbody.pdf'),
                   width = 8, height = 10)
 }
 
