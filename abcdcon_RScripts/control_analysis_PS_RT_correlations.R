@@ -137,11 +137,9 @@ behav_trim %>%
 
 #' # Compute mean (and SD) RT difference by PS condition (Supplemental Table 1)
 alldat %>%
-  # only take positive RT differences b/c the data are symmetric (b/c trial pairs are all rows and all columns)
-  dplyr::filter(RT_diff >=0) %>%
   dplyr::group_by(condition) %>%
-  dplyr::summarise(mean_RT = mean(RT_diff, na.rm = TRUE),
-                   sd_RT = sd(RT_diff, na.rm = TRUE))
+  dplyr::summarise(mean_RT_diff = mean(RT_diff, na.rm = TRUE),
+                   sd_RT_diff = sd(RT_diff, na.rm = TRUE))
 
 #' # Plot PS values against RT difference
 #' ## Define functions
