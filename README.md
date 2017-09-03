@@ -79,10 +79,13 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
 8. Calculate the pattern similarity values of interest using `pattern_similarity_no_outlier_trials_load_data_btwn_runs.R`
 9. Analyze using mixed models with `mixed_models.R`
 
-## Control analyses 
+## Supplemental analyses 
 1. Use FIR to estimate shape of univariate response in each subfield (Supplemental Figure X):
   1. (matlab scripts here)
   1. Plot the data: `control_analysis_FIR_to_GLM_plot_betas.R`
+1. Look at distribution of beta values (Supplemental Figure X)
+  1. Get trial-wise mean betas: `control_analysis_betas_by_ROI.m`
+  1. Plot distrubtions: `control_analysis_plot_betas_by_ROI.m`
 1. Randomly select trials so that all conditions have equal bin sizes: `control_analysis_matched_trial_numbers.R`
 1. Remove voxels of influence:
   1. Identify influential voxels: `control_analysis_drop_voxels.R`
