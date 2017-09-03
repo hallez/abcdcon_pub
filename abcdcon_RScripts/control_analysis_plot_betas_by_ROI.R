@@ -174,16 +174,18 @@ for(iroi in 1:length(ROIs)){
 all_betas_tidy %>%
   dplyr::filter(roi %in% c("brCA1_body", "brCA2_3_DG_body"),
                 hemi == "ashs_left") %>%
+  # format ROI labels to match other plots
+  dplyr::mutate(roi_lbl = gsub("(.*?)_body", "\\1", roi_lbl),
+                roi_lbl = sub("_","",roi_lbl),
+                roi_lbl = sub("_","",roi_lbl)) %>%
   ggplot2::ggplot(ggplot2::aes(color = roi_lbl, fill = roi_lbl)) +
   ggplot2::geom_violin(ggplot2::aes(x = roi_lbl, y = cur.mean), alpha = 0.6) +
-  ggplot2::facet_grid(subj_id ~ .) +
-  ggplot2::scale_fill_manual(values = c("#c6dbef", "#ffffcc")) +
-  ggplot2::scale_color_manual(values = c("#084594", "#fd8d3c")) +
+  ggplot2::facet_wrap(~subj_id) +
   ggplot2::ylab("Beta Value") +
   ggplot2::theme(strip.text.y = ggplot2::element_text(size = 10),
-                 axis.text.x = ggplot2::element_text(size = 15), axis.title.x = ggplot2::element_blank(),
+                 axis.text.x = ggplot2::element_blank(), axis.title.x = ggplot2::element_blank(),
                  axis.text.y = ggplot2::element_text(size = 8),
-                 legend.position = "none")
+                 legend.title = ggplot2::element_blank())
 
 if(SAVE_GRAPHS_FLAG == 1){
   ggplot2::ggsave(filename = file.path(graph_fpath_out, 'all_subj_mean_beta_violin_CA1body-CA23DGbody.pdf'),
