@@ -167,6 +167,8 @@ scatter_cond_facet_by_subj <- function(dat_in){
 #' ## Plot each condition
 # limit this to left hemi since this is where we find sigificant effects
 if(GRAPH_FLAG == 1) {
+  allplots <- list()
+  plot_counter <- 0
   for(iroi in 1:length(rois_of_interest)){
     for(icond in 1:length(conditions_of_interest)){
       cur_roi <- rois_of_interest[iroi]
@@ -203,13 +205,44 @@ if(GRAPH_FLAG == 1) {
         ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6))
       print(p)
 
+
       if(SAVE_GRAPHS_FLAG == 1){
         ggplot2::ggsave(file = file.path(graph_fpath_out,
                                          sprintf("RT-PS_correlation_%s_%s_bySubj.pdf", cur_roi, cur_cond)),
                         width=8, height=6)
+
+        # --- format for figure ---
+        plot_counter <- plot_counter + 1
+        cur_roi_fmt <- gsub("(.*?)_body", "\\1",cur_roi) %>%
+          sub("_","",.) %>%
+          sub("_","",.)
+        cur_cond_fmt <- ifelse((cur_cond == "diffVideo_sameHouse"), "Different Video Same House",
+                               ifelse((cur_cond == "diffVideo_diffHouse"), "Different Video Different House",
+                               ifelse((cur_cond == "sameVideo_sameHouse"), "Same Video Same House", "error")))
+
+        cp <- p +
+          # "pretty" scale from: https://stackoverflow.com/questions/11335836/increase-number-of-axis-ticks
+          ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(n = 3)) +
+          ggplot2::ggtitle(sprintf("%s: %s", cur_roi_fmt, cur_cond_fmt)) +
+          ggplot2::theme(axis.text.y = ggplot2::element_text(size = 6),
+                         # skinny margins from: https://stackoverflow.com/questions/36783189/changing-the-appearance-of-facet-labels-size
+                         strip.text.x = ggplot2::element_text(size = 10, margin = margin(.1, 0, .1, 0, "cm")))
+        allplots[[plot_counter]] <- cp
+
       }
     } #icond
   } #iroi
+  plot3x2 <- cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]], allplots[[4]], allplots[[5]], allplots[[6]],
+                     labels = c("A.", "B.", "C.", "D.", "E.", "F."),
+                     ncol = 3, nrow = 2)
+  cowplot::save_plot(file.path(graph_fpath_out, "RT-PS_correlation_all-cond_all-roi_bySubj.png"),
+            plot3x2,
+            ncol = 3,
+            nrow = 2,
+            # each individual subplot should have an aspect ratio of 1.3
+            base_aspect_ratio = 1.3
+  )
+
 } # GRAPH_FLAG
 
 #' # Re-model including RT
