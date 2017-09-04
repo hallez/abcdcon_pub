@@ -221,6 +221,28 @@ for(iroi in 1:nroi){
                                       high = "#f1a340") +
         ggplot2::ggtitle(cur_subj)
 
+      # --- organize plots by video ID ---
+      subj_pattern_corr_by_video <- subj_pattern_corr_lower
+      # since it's a square matrix, can re-names rows and columns based on IDs
+      colnames(subj_pattern_corr_by_video) <- subj_pattern_ids_tidy$video_id
+      rownames(subj_pattern_corr_by_video) <- subj_pattern_ids_tidy$video_id
+      # ordering based on https://stackoverflow.com/questions/7334644/sort-columns-of-a-dataframe-by-column-name
+      subj_pattern_corr_ordered_by_video <- subj_pattern_corr_by_video[, order(colnames(subj_pattern_corr_by_video))]
+      subj_pattern_corr_ordered_by_video <- subj_pattern_corr_ordered_by_video[order(rownames(subj_pattern_corr_ordered_by_video)),]
+      if(SAVE_GRAPHS_FLAG == 1){
+        png(file.path(graph_fpath_out, sprintf('%s_all-cond_%s_PS_left-hemi_by-video_superheat.png', cur_subj, cur_roi)), height = 800, width = 800)
+        superheat::superheat(X = subj_pattern_corr_ordered_by_video,
+                             legend = FALSE,
+                             membership.rows = rownames(subj_pattern_corr_ordered_by_video),
+                             left.label.text.size = 3,
+                             membership.cols = colnames(subj_pattern_corr_ordered_by_video),
+                             bottom.label.text.size = 3,
+                             bottom.label.text.angle = 90,
+                             heat.na.col = "gray",
+                             heat.lim = c(-1, 1))
+        dev.off()
+      }
+
     } #file.exists
   } #isubj
   # save out multiplot before going onto next ROI
