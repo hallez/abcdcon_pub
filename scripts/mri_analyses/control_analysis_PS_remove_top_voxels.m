@@ -11,6 +11,19 @@ roi_dirs = {'ashs_left','ashs_right'};
 num_vox = 5; % this is the number of voxels to be removed from PS
 rois = {'brCA1_body', 'brCA2_3_DG_body'};
 
+% pick removal method
+% options: 'mean', 'sd'
+REMOVE_METHOD_FLAG = 'sd';
+if strcmp(REMOVE_METHOD_FLAG, 'mean')
+    remove_str = '_by_mean';
+elseif strcmp(REMOVE_METHOD_FLAG, 'sd')
+    remove_str = '_by_SD';
+else
+    fprintf('Voxel removal method does not match possible file types.')
+    break;
+end
+
+
 %  loop across subject
 for isub=1:length(subjects)
 
@@ -45,7 +58,8 @@ for isub=1:length(subjects)
 
                     % read in voxels to exclude  
                     % this gets created by `control_analysis_drop_voxels.R`
-                    exclude_voxels_fname = fullfile(b.analMRIDir, b.curSubj, sprintf('%s_%s_top_%d_voxels.csv', cur_hemi, cur_roi, num_vox));
+                    exclude_voxels_fname = fullfile(b.analMRIDir, b.curSubj, sprintf('%s_%s_top_%d_voxels%s.csv', cur_hemi, cur_roi, num_vox, remove_str));                        
+
                     
                     if(exist(exclude_voxels_fname, 'file'))
                         exclude_voxels = csvread(exclude_voxels_fname);
@@ -55,12 +69,12 @@ for isub=1:length(subjects)
                         % already been removed, no need to do this again
                         % remove rows for voxels to drop
                         pattern_truncated = pattern_all_runs;
+                        fname_corr_out = cellstr(fullfile(b.cur_ROI_dir,sprintf('%s_pattern_corr_no_outlier_trials_%02d_truncated_voxels%s_all_runs', cur_roi, num_vox, remove_str)));
                         pattern_truncated(exclude_voxels, :) = [];
 
                         % take correlation across all voxels and all trials
                         % and save this out too 
                         pattern_corr = corr(pattern_truncated);
-                        fname_corr_out = cellstr(fullfile(b.cur_ROI_dir,sprintf('%s_pattern_corr_no_outlier_trials_%02d_truncated_voxels_all_runs', cur_roi, num_vox)));
                         save(fname_corr_out{:},'pattern_corr')
                     else
                         sprintf('\nExclude voxels file %s does not exist.', exclude_voxels_fname)

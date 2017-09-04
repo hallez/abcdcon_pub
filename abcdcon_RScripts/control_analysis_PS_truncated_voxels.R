@@ -50,6 +50,14 @@ temporal_trials <- data.frame()
 GRAPH_FLAG <- 0 # this will greatly slow down the script, but is nice for error-checking
 MIXED_MODELS_FLAG <- 1
 TALLY_CHECK_FLAG <- 1
+REMOVE_METHOD_FLAG <- 'mean' # options: 'mean', 'sd'
+
+if(REMOVE_METHOD_FLAG == 'mean'){
+  remove_str <- '_by_mean'
+} else if(REMOVE_METHOD_FLAG == 'sd'){
+    remove_str <- "_by_SD"
+}
+
 
 #' # Loop and load in the data
 #+ warning = FALSE
@@ -79,7 +87,7 @@ for(idir in c(1:length(roi_dirs))) {
       # if not, skip and continue on
       # this file is created by `control_analysis_PS_remove_top_voxels.m`
       cur_file <- file.path(
-        cur_roi_dir,sprintf('br%s_pattern_corr_no_outlier_trials_%02d_truncated_voxels_all_runs.mat', cur_roi, num_vox))
+        cur_roi_dir,sprintf('br%s_pattern_corr_no_outlier_trials_%02d_truncated_voxels%s_all_runs.mat', cur_roi, num_vox, remove_str))
 
       if(file.exists(cur_file)){
 
@@ -1488,14 +1496,14 @@ unique(pattern_averages$subj)
 
 #' ## Actually save it out
 # pattern averages
-save(pattern_averages,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_pattern_averages_no_outlier_trials_%02d_truncated_voxels_btwn_runs.RData', num_vox)))
-write.csv(pattern_averages,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_pattern_averages_no_outlier_trials_%02d_truncated_voxels_btwn_runs.csv', num_vox)))
+save(pattern_averages,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_pattern_averages_no_outlier_trials_%02d_truncated_voxels%s_btwn_runs.RData', num_vox, remove_str)))
+write.csv(pattern_averages,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_pattern_averages_no_outlier_trials_%02d_truncated_voxels%s_btwn_runs.csv', num_vox, remove_str)))
 
 # r values for individual trials and individual subjects
 if(MIXED_MODELS_FLAG==1){
-  save(spatial_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_spatial_trial_patterns_%02d_truncated_voxels.RData', num_vox)))
-  write.csv(spatial_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_spatial_trial_patterns_%02d_truncated_voxels.csv', num_vox)))
-  save(temporal_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_temporal_trial_patterns_%02d_truncated_voxels.RData', num_vox)))
-  write.csv(temporal_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_temporal_trial_patterns_%02d_truncated_voxels.csv', num_vox)))
+  save(spatial_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_spatial_trial_patterns_%02d_truncated_voxels%s.RData', num_vox, remove_str)))
+  write.csv(spatial_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_spatial_trial_patterns_%02d_truncated_voxels%s.csv', num_vox, remove_str)))
+  save(temporal_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_temporal_trial_patterns_%02d_truncated_voxels%s.RData', num_vox, remove_str)))
+  write.csv(temporal_trials,file=paste0(analyzed_mri_dir, halle::ensure_trailing_slash("multivariate_sanityCheck"), sprintf('group_temporal_trial_patterns_%02d_truncated_voxels%s.csv', num_vox, remove_str)))
 }
 
