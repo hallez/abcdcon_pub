@@ -161,6 +161,12 @@ for(iroi in 1:nroi){
 
       exclude_indices <- which(subj_pattern_ids_tidy$PS_include == "no")
 
+      # save out in case need to use these labels in other analyses
+      # technically, labels should be the same for all ROIs w/in a subject,
+      # but this is the file naming convention I've used for other analyses so sticking w/ it
+      save(subj_pattern_ids_tidy, file = file.path(analyzed_mri_dir, cur_subj, "ROIs",
+                                            "ashs_left", sprintf('br%s_pattern_mtx_ids_tidied_no_outlier_trials_all_runs.RData',cur_roi)))
+
       # --- capitalize on the power of R and give the pattern matrix meaningful row and column names ---
       colnames(subj_pattern_corr) <- subj_pattern_ids_tidy$value
       rownames(subj_pattern_corr) <- subj_pattern_ids_tidy$value
