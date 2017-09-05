@@ -12,12 +12,14 @@ num_vox = 5; % this is the number of voxels to be removed from PS
 rois = {'brCA1_body', 'brCA2_3_DG_body'};
 
 % pick removal method
-% options: 'mean', 'sd'
+% options: 'mean', 'sd', 'cond_diff'
 REMOVE_METHOD_FLAG = 'sd';
 if strcmp(REMOVE_METHOD_FLAG, 'mean')
     remove_str = '_by_mean';
 elseif strcmp(REMOVE_METHOD_FLAG, 'sd')
     remove_str = '_by_SD';
+elseif strcmp(REMOVE_METHOD_FLAG, 'cond_diff')
+    remove_str = '_by_condition_diff';
 else
     fprintf('Voxel removal method does not match possible file types.')
     break;

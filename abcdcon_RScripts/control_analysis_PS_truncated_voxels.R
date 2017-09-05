@@ -50,12 +50,14 @@ temporal_trials <- data.frame()
 GRAPH_FLAG <- 0 # this will greatly slow down the script, but is nice for error-checking
 MIXED_MODELS_FLAG <- 1
 TALLY_CHECK_FLAG <- 1
-REMOVE_METHOD_FLAG <- 'sd' # options: 'mean', 'sd'
+REMOVE_METHOD_FLAG <- 'sd' # options: 'mean', 'sd', 'cond_diff'
 
 if(REMOVE_METHOD_FLAG == 'mean'){
   remove_str <- '_by_mean'
 } else if(REMOVE_METHOD_FLAG == 'sd'){
-    remove_str <- "_by_SD"
+  remove_str <- "_by_SD"
+} else if(REMOVE_METHOD_FLAG == 'cond_diff'){
+  remove_str <- "_by_condition_diff"
 }
 
 
