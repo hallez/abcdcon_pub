@@ -47,7 +47,7 @@ dir.create(graph_fpath_out) # will throw an error if this already exists
 SAVE_GRAPHS_FLAG <-1
 REMOVE_METHOD_FLAG <- 'sd' # options: 'mean', 'sd', 'cond_diff'
 
-if(REMOVE_METHOD_FLAG == 'mean'){
+if(REMOVE_METHOD_FLAG == 'cond_diff'){
   remove_str <- '_by_mean'
 } else if(REMOVE_METHOD_FLAG == 'sd'){
   remove_str <- "_by_SD"

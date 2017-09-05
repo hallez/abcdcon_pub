@@ -13,7 +13,7 @@ rois = {'brCA1_body', 'brCA2_3_DG_body'};
 
 % pick removal method
 % options: 'mean', 'sd', 'cond_diff'
-REMOVE_METHOD_FLAG = 'sd';
+REMOVE_METHOD_FLAG = 'cond_diff';
 if strcmp(REMOVE_METHOD_FLAG, 'mean')
     remove_str = '_by_mean';
 elseif strcmp(REMOVE_METHOD_FLAG, 'sd')
