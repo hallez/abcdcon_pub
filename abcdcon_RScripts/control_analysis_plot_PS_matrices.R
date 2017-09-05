@@ -243,6 +243,25 @@ for(iroi in 1:nroi){
         dev.off()
       }
 
+      # save out one plot w/ the legend to use for making figures
+      if(isubj == 1){
+        if(SAVE_GRAPHS_FLAG == 1){
+          png(file.path(graph_fpath_out, sprintf('%s_all-cond_%s_PS_left-hemi_by-video_superheat_with-legend.png', cur_subj, cur_roi)), height = 800, width = 800)
+          superheat::superheat(X = subj_pattern_corr_ordered_by_video,
+                               legend.height = 0.5,
+                               legend.width = 2,
+                               legend.text.size = 20,
+                               membership.rows = rownames(subj_pattern_corr_ordered_by_video),
+                               left.label.text.size = 3,
+                               membership.cols = colnames(subj_pattern_corr_ordered_by_video),
+                               bottom.label.text.size = 3,
+                               bottom.label.text.angle = 90,
+                               heat.na.col = "gray",
+                               heat.lim = c(-1, 1))
+          dev.off()
+        }
+      }
+
     } #file.exists
   } #isubj
   # save out multiplot before going onto next ROI
