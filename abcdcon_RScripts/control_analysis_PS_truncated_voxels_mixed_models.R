@@ -45,7 +45,7 @@ dir.create(graph_fpath_out) # will throw an error if this already exists
 #' ## Setup other variables
 #' ### Flags
 SAVE_GRAPHS_FLAG <-1
-REMOVE_METHOD_FLAG <- 'sd' # options: 'mean', 'sd', 'cond_diff'
+REMOVE_METHOD_FLAG <- 'cond_diff' # options: 'mean', 'sd', 'cond_diff'
 
 if(REMOVE_METHOD_FLAG == 'cond_diff'){
   remove_str <- '_by_mean'
@@ -54,6 +54,9 @@ if(REMOVE_METHOD_FLAG == 'cond_diff'){
 } else if(REMOVE_METHOD_FLAG == 'cond_diff'){
   remove_str <- "_by_condition_diff"
 }
+
+#' # Print out method used to drop voxels
+sprintf("Using %s to drop voxels", REMOVE_METHOD_FLAG)
 
 #+ label="Load data"
 #' ## Load in PS data
