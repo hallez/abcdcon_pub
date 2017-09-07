@@ -289,6 +289,76 @@ tidy_trials <- all_trials_z_better_names %>%
                 roi %in% c("CA1_body", "CA2_3_DG_body")) %>%
   dplyr::select(-z_r)
 
+#' ## Compute subject-wise means for each condition and ROI
+mean_vals <- tidy_trials %>%
+  dplyr::group_by(subj, roi, condition) %>%
+  dplyr::summarise(mean_r = mean(r, na.rm = TRUE)) %>%
+  tidyr::spread(condition, mean_r) %>%
+  # revalue conditions so fit w/ other plots in the paper
+  dplyr::rename("Different Video\nSame House" = diffVideo_sameHouse,
+                "Different Video\nDifferent House" = diffVideo_diffHouse,
+                "Same Video\nSame House" = sameVideo_sameHouse)
+
+#' ## Plot by ROI
+for(iroi in 1:nroi){
+  cur_roi <- rois[iroi]
+  cur_mean_vals <- mean_vals %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(roi == cur_roi) %>%
+    as.data.frame()
+
+  # `dplyr::add_rownames` and `tibble::column_to_rownames` are both depricated, so do this instead
+  mean_vals_rowids <- cur_mean_vals
+  rownames(mean_vals_rowids) <- mean_vals_rowids$subj
+  mean_vals_by_subj <- mean_vals_rowids %>%
+    dplyr::select(-subj, -roi)
+
+  if(SAVE_GRAPHS_FLAG == 1){
+    png(file.path(graph_fpath_out, sprintf('all-cond-means_%s_PS_left-hemi.png', cur_roi)), height = 800, width = 800)
+    superheat::superheat(X = mean_vals_by_subj,
+                         title = gsub("_body","",cur_roi))
+    dev.off()
+  }
+
+}
+
+#' ## plot both ROIs in same plot so that scales match
+mean_vals_by_ROI <- tidy_trials %>%
+  dplyr::group_by(subj, roi, condition) %>%
+  dplyr::summarise(mean_r = mean(r, na.rm = TRUE)) %>%
+  tidyr::unite(condition_roi, condition, roi) %>%
+  tidyr::spread(condition_roi, mean_r) %>%
+  # revalue conditions so fit w/ other plots in the paper
+  dplyr::rename("CA1\nDifferent Video\nSame House" = diffVideo_sameHouse_CA1_body,
+                "CA1\nDifferent Video\nDifferent House" = diffVideo_diffHouse_CA1_body,
+                "CA1\nSame Video\nSame House" = sameVideo_sameHouse_CA1_body,
+                "CA23DG\nDifferent Video\nSame House" = diffVideo_sameHouse_CA2_3_DG_body,
+                "CA23DG\nDifferent Video\nDifferent House" = diffVideo_diffHouse_CA2_3_DG_body,
+                "CA23DG\nSame Video\nSame House" = sameVideo_sameHouse_CA2_3_DG_body) %>%
+  dplyr::ungroup() %>%
+  as.data.frame()
+
+mean_vals_by_ROI_rowids <- mean_vals_by_ROI
+rownames(mean_vals_by_ROI_rowids) <- mean_vals_by_ROI_rowids$subj
+mean_vals_by_ROI_by_subj <- mean_vals_by_ROI_rowids %>%
+  dplyr::select(-subj)
+
+if(SAVE_GRAPHS_FLAG == 1){
+  png(file.path(graph_fpath_out, sprintf('all-cond-means_CA1-CA23DG_columns-by-cond_PS_left-hemi.png')), height = 800, width = 800)
+  superheat::superheat(X = mean_vals_by_ROI_by_subj)
+  dev.off()
+}
+
+# reorder by ROI
+mean_vals_by_ROI_by_subj_order_by_ROI <- mean_vals_by_ROI_by_subj %>%
+  dplyr::select(starts_with("CA1"), starts_with("CA23DG"))
+
+if(SAVE_GRAPHS_FLAG == 1){
+  png(file.path(graph_fpath_out, sprintf('all-cond-means_CA1-CA23DG_columns-by-ROI_PS_left-hemi.png')), height = 800, width = 800)
+  superheat::superheat(X = mean_vals_by_ROI_by_subj_order_by_ROI)
+  dev.off()
+}
+
 #' ## Loop through and plot from PS data
 for(iroi in 1:nroi){
   for(icond in 1:ncond){
