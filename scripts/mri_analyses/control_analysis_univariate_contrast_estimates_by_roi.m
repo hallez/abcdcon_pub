@@ -4,8 +4,8 @@ cur_dir = pwd;
 ana_dir = analMRIDir; 
 output_dir = [analMRIDir, filesep, 'univariate_sanityCheck'];
 
-cons = {'con_0005.img' 'con_0010.img' 'con_0015.img'};
-conlabels = {'allRHits_vs_FamHitsANDMiss' 'brownRHitsxFHits_Miss' 'grayRHitsxFHits_Miss'};
+cons = {'con_0005.img' 'con_0007.img' 'con_0010.img' 'con_0012.img' 'con_0015.img'};
+conlabels = {'allRHits_vs_FamHitsANDMiss' 'brownRHits' 'brownRHitsxFHits_Miss' 'grayRHits' 'grayRHitsxFHits_Miss'};
 
 outLabel = 'body_ROIs';
 

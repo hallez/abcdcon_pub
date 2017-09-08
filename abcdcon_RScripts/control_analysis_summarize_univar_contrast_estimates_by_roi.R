@@ -95,11 +95,11 @@ if(file.exists(contrast_est_fpath)){
                      lower = activity - sem,
                      upper = activity + sem) %>%
     dplyr::filter(roi_file=="rCA1_body" | roi_file=="rCA2_3_DG_body",
-                  condition %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
+                  condition %in% c("brownRHits", "grayRHits"),
                   hemi == "ashs_left") %>%
     # re-label to pretty up plotting
     dplyr::mutate(roi_lbl = car::recode(roi_file, "'rCA1_body' = 'left CA1'; 'rCA2_3_DG_body' = 'left CA23DG'"),
-                  condition_lbl = car::recode(condition, "'brownRHitsxFHits_Miss' = 'Brown House'; 'grayRHitsxFHits_Miss' = 'Gray House'")) %>%
+                  condition_lbl = car::recode(condition, "'brownRHits' = 'Brown House'; 'grayRHits' = 'Gray House'")) %>%
     ggplot2::ggplot(ggplot2::aes(condition_lbl, activity, fill=condition_lbl)) +
     ggplot2::geom_bar(width=0.7,position=ggplot2::position_dodge(0.9),stat="identity") +
     ggplot2::facet_grid(.~roi_lbl) +
@@ -116,14 +116,14 @@ if(file.exists(contrast_est_fpath)){
 
   if(SAVE_GRAPHS_FLAG == 1){
     ggplot2::ggsave(file = file.path(graph_fpath_out,
-                                     "RHits_FHitsANDMisses_brownVSgray_left-hemi.pdf"),
+                                     "RHits_brownVSgray_left-hemi.pdf"),
                     width=8, height=6)
   }
 
   # --- statiscally compare brown vs gray house activity in the subfields ---
   cons %>%
     dplyr::filter(roi_file == "rCA1_body",
-                  contrast %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
+                  contrast %in% c("brownRHits", "grayRHits"),
                   hemi == "ashs_left") %>%
     ez::ezANOVA(.,
                 dv=.(activity),
@@ -133,7 +133,7 @@ if(file.exists(contrast_est_fpath)){
 
   cons %>%
     dplyr::filter(roi_file == "rCA2_3_DG_body",
-                  contrast %in% c("brownRHitsxFHits_Miss", "grayRHitsxFHits_Miss"),
+                  contrast %in% c("brownRHits", "grayRHits"),
                   hemi == "ashs_left") %>%
     ez::ezANOVA(.,
                 dv=.(activity),
