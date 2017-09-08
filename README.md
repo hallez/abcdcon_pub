@@ -79,15 +79,24 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
 8. Calculate the pattern similarity values of interest using `pattern_similarity_no_outlier_trials_load_data_btwn_runs.R`
 9. Analyze using mixed models with `mixed_models.R`
 
-## Supplemental analyses 
-1. Use FIR to estimate shape of univariate response in each subfield (Supplemental Figure X):
-  1. (matlab scripts here)
+## Supplemental analyses
+1. Use FIR to estimate shape of univariate response in each subfield (Supplemental Figure 3):
+  1. Generate FIR regressors: `control_analysis_RSA_generate_single_trial_regressors_FIR.m`
+  1. Estimate FIR models: `control_analysis_first_level_FIR.m`
+  1. Extract beta values: `control_analysis_FIR_to_GLM_extract_betas.m`
   1. Plot the data: `control_analysis_FIR_to_GLM_plot_betas.R`
-1. Look at distribution of beta values (Supplemental Figure X)
+1. Estimate univariate activity within each ROI (Supplemental Figure 4):
+  1. Grab univariate activity by ROI: `control_analysis_univariate_contrast_estimates_by_roi.m`
+  1. Plot: `abcdcon_RScripts/control_analysis_summarize_univar_contrast_estimates_by_roi.R`
+1. Look at distribution of beta values (Supplemental Figure 6)
   1. Get trial-wise mean betas: `control_analysis_betas_by_ROI.m`
   1. Plot distrubtions: `control_analysis_plot_betas_by_ROI.m`
-1. Randomly select trials so that all conditions have equal bin sizes: `control_analysis_matched_trial_numbers.R`
-1. Remove voxels of influence:
+1. Plot individual pattern similarity data (Supplemental Figure 7): `control_analysis_plot_PS_matrices.R`
+1. Estimate pattern similarity in "control" ROIs (Supplemental Figure 8): `control_analysis_mixed_models_other_ROIs.R`
+1. Randomly select trials so that all conditions have equal bin sizes (Supplemental Figure 9): `control_analysis_matched_trial_numbers.R`
+1. Correlate pattern similarity with reaction times (Supplemental Figure 10):
+  1. `control_analysis_PS_RT_correlations.R`
+1. Remove voxels of influence (Supplemental Figure 12):
   1. Identify influential voxels: `control_analysis_drop_voxels.R`
   1. Remove these voxels from pattern matrices: `control_analysis_remove_top_voxels.m`
   1. Re-compute PS without these voxels: `control_analysis_PS_truncated_voxels.R`
