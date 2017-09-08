@@ -96,7 +96,7 @@ Assumes you have already preprocessed, run QA (to generate spike regressors), an
 1. Randomly select trials so that all conditions have equal bin sizes (Supplemental Figure 9): `control_analysis_matched_trial_numbers.R`
 1. Correlate pattern similarity with reaction times (Supplemental Figure 10):
   1. `control_analysis_PS_RT_correlations.R`
-1. Remove voxels of influence (Supplemental Figure 12):
+1. Remove voxels of influence:
   1. Identify influential voxels: `control_analysis_drop_voxels.R`
   1. Remove these voxels from pattern matrices: `control_analysis_remove_top_voxels.m`
   1. Re-compute PS without these voxels: `control_analysis_PS_truncated_voxels.R`
