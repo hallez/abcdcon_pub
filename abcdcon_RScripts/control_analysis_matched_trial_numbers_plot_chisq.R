@@ -40,6 +40,7 @@ graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
 #' ## Setup other variables
 #' ### Flags
 SAVE_GRAPHS_FLAG <- 1
+chisq_signif <- 5.991 # for Chisq df =2 (from https://www.medcalc.org/manual/chi-square-table.php)
 
 #+ label="Load data"
 #' # Load in data
@@ -50,12 +51,16 @@ load(paste0(analyzed_mri_dir, sprintf('match_trialnums_%dreps_chisqvals.RData', 
 #' ## Peek at the data
 head(all_chisq)
 
+#' # Count the number of times the chi-square value would not have been significant
+all_chisq %>%
+  dplyr::filter(chisq_value <= chisq_signif)
+
 #' # Plot a distribution
 all_chisq %>%
   ggplot2::ggplot(ggplot2::aes(chisq_value)) +
   ggplot2::geom_histogram(binwidth = 0.1) +
   # draw a line at p = 0.05 for Chisq df =2 (from https://www.medcalc.org/manual/chi-square-table.php)
-  ggplot2::geom_vline(xintercept = 5.991, color = "red")
+  ggplot2::geom_vline(xintercept = chisq_signif, color = "red")
 
 ggplot2::ggsave(file.path(graph_fpath_out, "matched-trial-nums", sprintf("control_analysis_trial_nums_chisq_dist_%s.pdf", num_reps)),
                 width = 6, height = 4)
