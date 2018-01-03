@@ -40,6 +40,7 @@ dropbox_graph_fpath_out <- paste0(halle::ensure_trailing_slash(dropbox_dir),
                                   halle::ensure_trailing_slash("figures"))
 graph_fpath_out <- paste0(dropbox_graph_fpath_out, "plot-PS-matrices")
 dir.create(graph_fpath_out) # will throw an error if this already exists
+rsa_chapter_graph_fpath_out <- halle::ensure_trailing_slash(file.path("/Users", "hrzucker", "Dropbox", "work", "manuscripts", "rsa-methods-chapter", "figures"))
 
 #' ## Setup other variables
 #' ### Flags
@@ -170,6 +171,22 @@ for(iroi in 1:nroi){
       # --- capitalize on the power of R and give the pattern matrix meaningful row and column names ---
       colnames(subj_pattern_corr) <- subj_pattern_ids_tidy$value
       rownames(subj_pattern_corr) <- subj_pattern_ids_tidy$value
+
+
+      # plot autocorrelation figure for rsa chapter
+      if(SAVE_GRAPHS_FLAG == 1) {
+
+        png(file.path(rsa_chapter_graph_fpath_out, sprintf('%s_all-cond_%s_PS_left-hemi_superheat.png', cur_subj, cur_roi)), height = 800, width = 800)
+        superheat::superheat(X = subj_pattern_corr,
+                             legend = TRUE,
+                             left.label = "none",
+                             bottom.label = "none",
+                             heat.na.col = "white",
+                             # heat.lim = c(-1, 1),
+                             heat.pal = c("blue", "white", "red"))
+        dev.off()
+      }
+
 
       # --- notch out w/in run autocorrelation ---
       # graphical check: only the NaN-ed out trials should be gray
