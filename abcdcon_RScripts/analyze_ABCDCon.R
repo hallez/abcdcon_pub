@@ -27,6 +27,7 @@ config <- yaml::yaml.load_file(paste0(project_dir,"config.yml"))
 raw_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$raw_behavioral))
 analyzed_behavioral_dir <- paste0(project_dir,halle::ensure_trailing_slash(config$directories$analyzed_behavioral))
 dropbox_dir <- paste0(halle::ensure_trailing_slash(config$directories$dropbox_abcdcon))
+graph_out_dir <- paste0(halle::ensure_trailing_slash("/Users/hrzucker/Dropbox/work/postdoc-search/postdoc-talk/"))
 
 #' ## Setup other variables
 SAVE_GRAPHS_FLAG <- 1
@@ -105,6 +106,38 @@ data_objrec_rates <-
                 n_CR_rate = N_New / total_new_trials)
 
 head(data_objrec_rates)
+
+#' ### Plot only correct memory responses
+data_objrec_rates %>%
+  dplyr::select(subj_num, r_hit_rate, f_hit_rate, n_CR_rate) %>%
+  dplyr::rename(rem = r_hit_rate, fam = f_hit_rate, new = n_CR_rate) %>%
+  tidyr::gather(item_recog_response_label, resprate, -subj_num) %>%
+  dplyr::group_by(item_recog_response_label) %>%
+  dplyr::summarise(mean_resprate = mean(resprate),
+                   sd_resprate = sd(resprate),
+                   num_subj = length(resprate),
+                   sem_resprate = sd_resprate/sqrt(num_subj)) %>%
+  dplyr::mutate(response_factor = as.factor(item_recog_response_label),
+                response_ordered = factor(response_factor, levels = c("rem", "fam", "new"))) %>%
+  ggplot2::ggplot(ggplot2::aes(x = response_ordered, y = mean_resprate)) +
+  ggplot2::geom_bar(stat = "identity", width = 0.5) +
+  ggplot2::geom_errorbar(ggplot2::aes(ymin = mean_resprate - sem_resprate,
+                                      ymax = mean_resprate + sem_resprate),
+                         width = 0.10) +
+  ggplot2::ggtitle("Item Recognition Accuracy") +
+  ggplot2::xlab("subject response") +
+  ggplot2::ylab("p(correct response)") +
+  ggplot2::theme(axis.title.x = ggplot2::element_text(size = 30), axis.text.x = ggplot2::element_text(size = 30),
+                 strip.text.x = ggplot2::element_text(size = 28),
+                 # margin based on: http://stackoverflow.com/questions/14487188/increase-distance-between-text-and-title-on-the-y-axis
+                 axis.title.y = ggplot2::element_text(size = 30, margin = ggplot2::margin(0,20,0,0)), axis.text.y = ggplot2::element_text(size = 25),
+                 strip.text.y = ggplot2::element_text(size = 28),
+                 plot.title = ggplot2::element_text(size = 25))
+
+if(SAVE_GRAPHS_FLAG == 1){
+  ggplot2::ggsave(filename = file.path(graph_out_dir, "spatcon-item-recog-memory.pdf"),
+                  width = 8, height = 6)
+}
 
 #' ### Summarize these rates (Supplemental Table 1: Item Recognition)
 data_objrec_rates %>%
