@@ -175,8 +175,7 @@ for(iroi in 1:nroi){
 
       # plot autocorrelation figure for rsa chapter
       if(SAVE_GRAPHS_FLAG == 1) {
-
-        png(file.path(rsa_chapter_graph_fpath_out, sprintf('%s_all-cond_%s_PS_left-hemi_superheat.png', cur_subj, cur_roi)), height = 800, width = 800)
+        jpeg(file.path(rsa_chapter_graph_fpath_out, sprintf('%s_all-cond_%s_PS_left-hemi_superheat.jpeg', cur_subj, cur_roi)), height = 800, width = 800)
         superheat::superheat(X = subj_pattern_corr,
                              legend = TRUE,
                              left.label = "none",
